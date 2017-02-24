@@ -56,6 +56,7 @@ type Canvas struct {
     fps int
     mutex sync.Mutex
     entities map[int]*Entity
+    soundqueue []string
 }
 
 func NewCanvas(fps int) *Canvas {
@@ -99,6 +100,15 @@ func (w *Canvas) NewSprite(filename string, x, y, speedx, speedy float64) *Entit
     return w.new_entity(x, y, speedx, speedy, "", 's', filename)
 }
 
+func (w *Canvas) PlaySound(filename string) {
+    sound := eng.sounds[filename]       // Safe to read without mutex since there are no writes any more
+    if sound == nil {
+        return
+    }
+    varname := sound.varname
+    w.soundqueue = append(w.soundqueue, varname)
+}
+
 func (w *Canvas) Send() error {
 
     var main_message_slice []string
@@ -140,7 +150,7 @@ func (w *Canvas) Send() error {
     }
 
     eng.framecount += 1
-    header_string := fmt.Sprintf("s %d", eng.framecount)        // Header is "s" for sprites and then a counter
+    header_string := fmt.Sprintf("v %d", eng.framecount)        // Header is "v" for "visual" and then a counter
     actual_message_slice := []string{header_string, main_message}
     message := strings.Join(actual_message_slice, " ")
 
@@ -148,6 +158,24 @@ func (w *Canvas) Send() error {
     if err != nil {
         return fmt.Errorf("Send(): %v", err)
     }
+
+    // ---------------------------------------------
+    // Now do sounds
+
+    if len(w.soundqueue) == 0 {
+        return nil
+    }
+
+    sound_messages := strings.Join(w.soundqueue, " ")
+    actual_message_slice = []string{"a", sound_messages}        // Header is "a" for "audio"
+    message = strings.Join(actual_message_slice, " ")
+
+    err = eng.conn.WriteMessage(websocket.TextMessage, []byte(message))
+    if err != nil {
+        return fmt.Errorf("Send(): %v", err)
+    }
+
+    w.soundqueue = nil
 
     return nil
 }

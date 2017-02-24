@@ -98,7 +98,7 @@ ws.onmessage = function (evt) {
     var stuff = evt.data.split(" ");
     var frame_type = stuff[0]
 
-    if (frame_type === "s") {
+    if (frame_type === "v") {                               // Visual frames
 
         ws_frames += 1
         all_things.length = 0
@@ -123,12 +123,11 @@ ws.onmessage = function (evt) {
             all_things.push(new_thing)
         }
 
-    } else if (frame_type === "a") {
+    } else if (frame_type === "a") {                        // Audio events
 
         var len = stuff.length
-        for (var n = 2 ; n < len ; n++) {
-            var elements = stuff[n].split(":")
-            play_multi_sound(elements[1])
+        for (var n = 1 ; n < len ; n++) {
+            play_multi_sound(stuff[n])
         }
     }
 };
