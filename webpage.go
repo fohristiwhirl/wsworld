@@ -112,9 +112,6 @@ ws.onmessage = function (evt) {
             case "p":
                 new_thing = parse_point(stuff[n])
                 break
-            case "c":
-                new_thing = parse_circle(stuff[n])
-                break
             case "s":
                 new_thing = parse_sprite(stuff[n])
                 break
@@ -137,11 +134,12 @@ function parse_point(s) {
 
     var ret = {}
     ret.type = elements[0]
-    ret.colour = elements[1]
-    ret.x = parseFloat(elements[2])
-    ret.y = parseFloat(elements[3])
-    ret.speedx = parseFloat(elements[4])
-    ret.speedy = parseFloat(elements[5])
+    ret.id = elements[1]
+    ret.colour = elements[2]
+    ret.x = parseFloat(elements[3])
+    ret.y = parseFloat(elements[4])
+    ret.speedx = parseFloat(elements[5])
+    ret.speedy = parseFloat(elements[6])
 
     return ret
 }
@@ -153,40 +151,18 @@ function draw_point(p) {
     virtue.fillRect(x, y, 1, 1)
 }
 
-function parse_circle(s) {
-
-    var elements = s.split(":")
-
-    var ret = {}
-    ret.type = elements[0]
-    ret.colour = elements[1]
-    ret.radius = elements[2]
-    ret.x = parseFloat(elements[3])
-    ret.y = parseFloat(elements[4])
-    ret.speedx = parseFloat(elements[5])
-    ret.speedy = parseFloat(elements[6])
-
-    return ret
-}
-
-function draw_circle(c) {
-    virtue.beginPath()
-    virtue.arc(c.x, c.y, c.radius, 0, 2 * Math.PI, false)
-    virtue.fillStyle = c.colour
-    virtue.fill()
-}
-
 function parse_sprite(s) {
 
     var elements = s.split(":")
 
     var ret = {}
     ret.type = elements[0]
-    ret.varname = elements[1]
-    ret.x = parseFloat(elements[2])
-    ret.y = parseFloat(elements[3])
-    ret.speedx = parseFloat(elements[4])
-    ret.speedy = parseFloat(elements[5])
+    ret.id = elements[1]
+    ret.varname = elements[2]
+    ret.x = parseFloat(elements[3])
+    ret.y = parseFloat(elements[4])
+    ret.speedx = parseFloat(elements[5])
+    ret.speedy = parseFloat(elements[6])
 
     return ret
 }
@@ -207,9 +183,6 @@ function draw() {
         switch (all_things[n].type) {
         case "p":
             draw_point(all_things[n])
-            break
-        case "c":
-            draw_circle(all_things[n])
             break
         case "s":
             draw_sprite(all_things[n])

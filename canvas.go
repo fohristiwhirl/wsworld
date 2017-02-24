@@ -139,10 +139,10 @@ func (w *Canvas) Send() error {
             }
 
             visual_slice = append(visual_slice,
-                        fmt.Sprintf("s:%s:%.1f:%.1f:%.1f:%.1f", varname, e.X, e.Y, e.Speedx * fps, e.Speedy * fps))
+                        fmt.Sprintf("s:i%d:%s:%.1f:%.1f:%.1f:%.1f", e.id, varname, e.X, e.Y, e.Speedx * fps, e.Speedy * fps))
         case 'p':
             visual_slice = append(visual_slice,
-                        fmt.Sprintf("p:%s:%.1f:%.1f:%.1f:%.1f", e.Colour, e.X, e.Y, e.Speedx * fps, e.Speedy * fps))
+                        fmt.Sprintf("p:i%d:%s:%.1f:%.1f:%.1f:%.1f", e.id, e.Colour, e.X, e.Y, e.Speedx * fps, e.Speedy * fps))
         }
     }
 
