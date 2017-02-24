@@ -37,7 +37,6 @@ type engine struct {
     res_path_local  string
     keyboard        map[string]bool
     conn            *websocket.Conn
-    framecount      int
     mutex           sync.Mutex
     next_chan       chan bool
 }

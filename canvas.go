@@ -149,9 +149,7 @@ func (w *Canvas) Send() error {
         return fmt.Errorf("Send(): no connection")
     }
 
-    eng.framecount += 1
-    header_string := fmt.Sprintf("v %d", eng.framecount)        // Header is "v" for "visual" and then a counter
-    actual_message_slice := []string{header_string, main_message}
+    actual_message_slice := []string{"v", main_message}         // Header is "v" for "visual"
     message := strings.Join(actual_message_slice, " ")
 
     err := eng.conn.WriteMessage(websocket.TextMessage, []byte(message))

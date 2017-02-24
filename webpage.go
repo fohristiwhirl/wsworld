@@ -72,8 +72,7 @@ Interpolated draws: <span id="interp_draws">0</span>
 var WIDTH = {{.Width}}
 var HEIGHT = {{.Height}}
 
-var last_frame_received = -1
-var last_frame_drawn = -1
+var have_drawn_last_ws_frame = false
 
 var ws_frames = 0
 var total_draws = 0
@@ -101,11 +100,11 @@ ws.onmessage = function (evt) {
     if (frame_type === "v") {                               // Visual frames
 
         ws_frames += 1
+        have_drawn_last_ws_frame = false
         all_things.length = 0
-        last_frame_received = stuff[1]
 
         var len = stuff.length
-        for (var n = 2 ; n < len ; n++) {
+        for (var n = 1 ; n < len ; n++) {
 
             var new_thing
 
@@ -218,13 +217,12 @@ function draw() {
         }
     }
 
-    last_frame_drawn = last_frame_received
     last_draw_time = Date.now()
 }
 
 function animate() {
 
-    if (last_frame_received <= last_frame_drawn) {
+    if (have_drawn_last_ws_frame === true) {
 
         // We didn't receive a websocket message in time, so interpolate...
 
@@ -253,6 +251,7 @@ function animate() {
     }
 
     draw()
+    have_drawn_last_ws_frame = true
     ws.send("next")
     requestAnimationFrame(animate)
 }
