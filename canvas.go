@@ -158,6 +158,7 @@ func (w *Canvas) Send() error {
 
     var err error
 
+    eng.mutex.Lock()
     if (eng.conn == nil) {
 
         err = fmt.Errorf("connection was nil")
@@ -174,6 +175,7 @@ func (w *Canvas) Send() error {
             err = eng.conn.WriteMessage(websocket.TextMessage, []byte(visual_message))
         }
     }
+    eng.mutex.Unlock()
 
     w.mutex.Lock()
     w.soundqueue = nil      // Always clear the sound queue regardless of send...
