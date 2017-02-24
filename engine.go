@@ -52,38 +52,34 @@ type sound struct {
     varname         string
 }
 
-func RegisterSprite(filename string) error {
+func RegisterSprite(filename string) {
 
     if eng.started {
-        return fmt.Errorf("RegisterSprite(): already started")
+        panic("RegisterSprite(): already started")
     }
 
     varname := new_sprite_varname()
 
     newsprite := sprite{filename, varname}
     eng.sprites[filename] = &newsprite
-
-    return nil
 }
 
-func RegisterSound(filename string) error {
+func RegisterSound(filename string) {
 
     if eng.started {
-        return fmt.Errorf("RegisterSound(): already started")
+        panic("RegisterSound(): already started")
     }
 
     varname := new_sound_varname()
 
     newsound := sound{filename, varname}
     eng.sounds[filename] = &newsound
-
-    return nil
 }
 
-func Start(title, server, normal_path, res_path_local string, width, height int) error {
+func Start(title, server, normal_path, res_path_local string, width, height int) {
 
     if eng.started {
-        return fmt.Errorf("wsengine.Start(): already started")
+        panic("wsengine.Start(): already started")
     }
 
     if res_path_local == "" {
@@ -99,8 +95,6 @@ func Start(title, server, normal_path, res_path_local string, width, height int)
     eng.static = static_webpage(eng.title, server, VIRTUAL_WS_DIR, VIRTUAL_RESOURCE_DIR, eng.sprites, eng.sounds, width, height)
 
     go http_startup(server, normal_path, VIRTUAL_WS_DIR, VIRTUAL_RESOURCE_DIR, res_path_local)
-
-    return nil
 }
 
 func WaitForRequest() {

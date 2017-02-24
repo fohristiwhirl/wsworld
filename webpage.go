@@ -193,7 +193,6 @@ function parse_sprite(s) {
 }
 
 function draw_sprite(sp) {
-    console.log(sp)
     var x = sp.x - window[sp.varname].width / 2
     var y = sp.y - window[sp.varname].height / 2
     virtue.drawImage(window[sp.varname], x, y)
