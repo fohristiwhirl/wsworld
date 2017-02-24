@@ -7,7 +7,7 @@ package wsworld
 // Operating on an entity that has been removed from the map is harmless.
 //
 // THEREFORE:
-// Accessing the canvas map requires a mutex.
+// Accessing the canvas requires a mutex.
 // But no mutex is needed for entities.
 
 import (
@@ -101,6 +101,14 @@ func (w *Canvas) NewSprite(filename string, x, y, speedx, speedy float64) *Entit
 }
 
 func (w *Canvas) PlaySound(filename string) {
+
+    w.mutex.Lock()
+    defer w.mutex.Unlock()
+
+    if len(w.soundqueue) >= 32 {
+        return
+    }
+
     sound := eng.sounds[filename]       // Safe to read without mutex since there are no writes any more
     if sound == nil {
         return
@@ -111,9 +119,9 @@ func (w *Canvas) PlaySound(filename string) {
 
 func (w *Canvas) Send() error {
 
-    var main_message_slice []string
-
     w.mutex.Lock()
+
+    var visual_slice = []string{"v"}                // Header: "v" for "visual"
 
     for _, e := range w.entities {
 
@@ -123,57 +131,57 @@ func (w *Canvas) Send() error {
 
         switch e.c {
         case 's':
-            sprite := eng.sprites[e.filename]     // Safe to read without mutex since there are no writes any more
+            sprite := eng.sprites[e.filename]       // Safe to read without mutex since there are no writes any more
 
             var varname string
             if sprite != nil {
                 varname = sprite.varname
             }
 
-            main_message_slice = append(main_message_slice,
+            visual_slice = append(visual_slice,
                         fmt.Sprintf("s:%s:%.1f:%.1f:%.1f:%.1f", varname, e.X, e.Y, e.Speedx * float64(w.fps), e.Speedy * float64(w.fps)))
         case 'p':
-            main_message_slice = append(main_message_slice,
+            visual_slice = append(visual_slice,
                         fmt.Sprintf("p:%s:%.1f:%.1f:%.1f:%.1f", e.Colour, e.X, e.Y, e.Speedx * float64(w.fps), e.Speedy * float64(w.fps)))
         }
     }
 
     w.mutex.Unlock()
 
-    main_message := strings.Join(main_message_slice, " ")
+    visual_message := strings.Join(visual_slice, " ")
 
-    eng.mutex.Lock()
-    defer eng.mutex.Unlock()
+    // Now do sounds, which are easy to assemble...
 
-    if eng.conn == nil {
-        return fmt.Errorf("Send(): no connection")
+    sound_message := "a " + strings.Join(w.soundqueue, " ")      // Header: "a" for "audio"
+
+    // Send both...
+
+    var err error
+
+    if (eng.conn == nil) {
+
+        err = fmt.Errorf("connection was nil")
+
+    } else {
+
+        if len(w.soundqueue) > 0 {
+            err = eng.conn.WriteMessage(websocket.TextMessage, []byte(sound_message))
+        }
+
+        // If the audio send succeeded or wasn't attempted, we can also sent video...
+
+        if err == nil {
+            err = eng.conn.WriteMessage(websocket.TextMessage, []byte(visual_message))
+        }
     }
 
-    actual_message_slice := []string{"v", main_message}         // Header is "v" for "visual"
-    message := strings.Join(actual_message_slice, " ")
+    w.mutex.Lock()
+    w.soundqueue = nil      // Always clear the sound queue regardless of send...
+    w.mutex.Unlock()
 
-    err := eng.conn.WriteMessage(websocket.TextMessage, []byte(message))
     if err != nil {
         return fmt.Errorf("Send(): %v", err)
     }
-
-    // ---------------------------------------------
-    // Now do sounds
-
-    if len(w.soundqueue) == 0 {
-        return nil
-    }
-
-    sound_messages := strings.Join(w.soundqueue, " ")
-    actual_message_slice = []string{"a", sound_messages}        // Header is "a" for "audio"
-    message = strings.Join(actual_message_slice, " ")
-
-    err = eng.conn.WriteMessage(websocket.TextMessage, []byte(message))
-    if err != nil {
-        return fmt.Errorf("Send(): %v", err)
-    }
-
-    w.soundqueue = nil
 
     return nil
 }
