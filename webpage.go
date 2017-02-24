@@ -252,7 +252,6 @@ function animate() {
 
     draw()
     have_drawn_last_ws_frame = true
-    ws.send("next")
     requestAnimationFrame(animate)
 }
 

@@ -53,15 +53,13 @@ func (e *Entity) Exists() bool {
 }
 
 type Canvas struct {
-    fps int
     mutex sync.Mutex
     entities map[int]*Entity
     soundqueue []string
 }
 
-func NewCanvas(fps int) *Canvas {
+func NewCanvas() *Canvas {
     ret := new(Canvas)
-    ret.fps = fps
     ret.entities = make(map[int]*Entity)
     return ret
 }
@@ -119,6 +117,8 @@ func (w *Canvas) PlaySound(filename string) {
 
 func (w *Canvas) Send() error {
 
+    fps := eng.fps                                  // Safe to read without mutex since there are no writes any more
+
     w.mutex.Lock()
 
     var visual_slice = []string{"v"}                // Header: "v" for "visual"
@@ -139,10 +139,10 @@ func (w *Canvas) Send() error {
             }
 
             visual_slice = append(visual_slice,
-                        fmt.Sprintf("s:%s:%.1f:%.1f:%.1f:%.1f", varname, e.X, e.Y, e.Speedx * float64(w.fps), e.Speedy * float64(w.fps)))
+                        fmt.Sprintf("s:%s:%.1f:%.1f:%.1f:%.1f", varname, e.X, e.Y, e.Speedx * fps, e.Speedy * fps))
         case 'p':
             visual_slice = append(visual_slice,
-                        fmt.Sprintf("p:%s:%.1f:%.1f:%.1f:%.1f", e.Colour, e.X, e.Y, e.Speedx * float64(w.fps), e.Speedy * float64(w.fps)))
+                        fmt.Sprintf("p:%s:%.1f:%.1f:%.1f:%.1f", e.Colour, e.X, e.Y, e.Speedx * fps, e.Speedy * fps))
         }
     }
 

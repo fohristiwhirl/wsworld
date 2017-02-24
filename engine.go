@@ -25,20 +25,19 @@ func init() {
     eng.sprites = make(map[string]*sprite)
     eng.sounds = make(map[string]*sound)
     eng.keyboard = make(map[string]bool)
-    eng.next_chan = make(chan bool)
 }
 
 type engine struct {
     started         bool
+    fps             float64
+    res_path_local  string
     title           string
     static          string
     sprites         map[string]*sprite      // filename -> sprite
     sounds          map[string]*sound       // filename -> sound
-    res_path_local  string
     keyboard        map[string]bool
     conn            *websocket.Conn
     mutex           sync.Mutex
-    next_chan       chan bool
 }
 
 type sprite struct {
@@ -75,7 +74,7 @@ func RegisterSound(filename string) {
     eng.sounds[filename] = &newsound
 }
 
-func Start(title, server, normal_path, res_path_local string, width, height int) {
+func Start(title, server, normal_path, res_path_local string, width, height int, fps float64) {
 
     if eng.started {
         panic("wsengine.Start(): already started")
@@ -90,14 +89,11 @@ func Start(title, server, normal_path, res_path_local string, width, height int)
     eng.started = true
     eng.title = title
     eng.res_path_local = res_path_local
+    eng.fps = fps
 
     eng.static = static_webpage(eng.title, server, VIRTUAL_WS_DIR, VIRTUAL_RESOURCE_DIR, eng.sprites, eng.sounds, width, height)
 
     go http_startup(server, normal_path, VIRTUAL_WS_DIR, VIRTUAL_RESOURCE_DIR, res_path_local)
-}
-
-func WaitForRequest() {
-    <- eng.next_chan
 }
 
 func KeyDown(key string) bool {
@@ -184,11 +180,6 @@ func handle_message(msg string) {
     defer eng.mutex.Unlock()
 
     switch fields[0] {
-    case "next":
-        select {
-        case eng.next_chan <- true:
-        default:
-        }
     case "keyup":
         if len(fields) < 2 {
             return
