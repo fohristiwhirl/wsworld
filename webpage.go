@@ -84,7 +84,7 @@ var virtue = document.querySelector("canvas").getContext("2d")
 document.querySelector("canvas").width = WIDTH
 document.querySelector("canvas").height = HEIGHT
 
-var all_things = []
+var all_things = {}
 
 var ws = new WebSocket("ws://{{.Server}}{{.WsPath}}")
 
@@ -97,29 +97,37 @@ ws.onmessage = function (evt) {
     var stuff = evt.data.split(" ");
     var frame_type = stuff[0]
 
-    if (frame_type === "v") {                               // Visual frames
+    if (frame_type === "v") {
+
+        // Deal with visual frames.................................................................
 
         ws_frames += 1
         have_drawn_last_ws_frame = false
-        all_things.length = 0
 
         var len = stuff.length
         for (var n = 1 ; n < len ; n++) {
 
-            var new_thing
-
             switch (stuff[n].charAt(0)) {
             case "p":
-                new_thing = parse_point(stuff[n])
+                parse_point(stuff[n])
                 break
             case "s":
-                new_thing = parse_sprite(stuff[n])
+                parse_sprite(stuff[n])
                 break
             }
-            all_things.push(new_thing)
         }
 
-    } else if (frame_type === "a") {                        // Audio events
+        for (var key in all_things) {
+
+            if (all_things[key].last_seen < ws_frames) {    // We didn't see the object, so delete it
+                delete all_things[key]
+                continue
+            }
+        }
+
+    } else if (frame_type === "a") {
+
+        // Deal with audio events..................................................................
 
         var len = stuff.length
         for (var n = 1 ; n < len ; n++) {
@@ -131,17 +139,25 @@ ws.onmessage = function (evt) {
 function parse_point(s) {
 
     var elements = s.split(":")
+    var id = elements[1]
 
-    var ret = {}
-    ret.type = elements[0]
-    ret.id = elements[1]
-    ret.colour = elements[2]
-    ret.x = parseFloat(elements[3])
-    ret.y = parseFloat(elements[4])
-    ret.speedx = parseFloat(elements[5])
-    ret.speedy = parseFloat(elements[6])
+    var thing
 
-    return ret
+    if (all_things.hasOwnProperty(id) == false) {
+        all_things[id] = {}
+    }
+
+    thing = all_things[id]
+
+    thing.type = elements[0]
+    thing.id = elements[1]
+    thing.colour = elements[2]
+    thing.x = parseFloat(elements[3])
+    thing.y = parseFloat(elements[4])
+    thing.speedx = parseFloat(elements[5])
+    thing.speedy = parseFloat(elements[6])
+
+    thing.last_seen = ws_frames
 }
 
 function draw_point(p) {
@@ -154,17 +170,25 @@ function draw_point(p) {
 function parse_sprite(s) {
 
     var elements = s.split(":")
+    var id = elements[1]
 
-    var ret = {}
-    ret.type = elements[0]
-    ret.id = elements[1]
-    ret.varname = elements[2]
-    ret.x = parseFloat(elements[3])
-    ret.y = parseFloat(elements[4])
-    ret.speedx = parseFloat(elements[5])
-    ret.speedy = parseFloat(elements[6])
+    var thing
 
-    return ret
+    if (all_things.hasOwnProperty(elements[1]) == false) {
+        all_things[id] = {}
+    }
+
+    thing = all_things[id]
+
+    thing.type = elements[0]
+    thing.id = elements[1]
+    thing.varname = elements[2]
+    thing.x = parseFloat(elements[3])
+    thing.y = parseFloat(elements[4])
+    thing.speedx = parseFloat(elements[5])
+    thing.speedy = parseFloat(elements[6])
+
+    thing.last_seen = ws_frames
 }
 
 function draw_sprite(sp) {
@@ -178,14 +202,14 @@ function draw() {
     virtue.fillStyle = "black"
     virtue.fillRect(0, 0, {{.Width}}, {{.Height}})
 
-    var len = all_things.length
-    for (var n = 0 ; n < len ; n++) {
-        switch (all_things[n].type) {
+    for (var key in all_things) {
+
+        switch (all_things[key].type) {
         case "p":
-            draw_point(all_things[n])
+            draw_point(all_things[key])
             break
         case "s":
-            draw_sprite(all_things[n])
+            draw_sprite(all_things[key])
             break
         }
     }
@@ -205,11 +229,10 @@ function animate() {
 
         var observed_framerate = 1000 / (Date.now() - last_draw_time)
 
-        var len = all_things.length
-        for (var n = 0 ; n < len ; n++) {
+        for (var key in all_things) {
 
-            all_things[n].x += all_things[n].speedx / observed_framerate
-            all_things[n].y += all_things[n].speedy / observed_framerate
+            all_things[key].x += all_things[key].speedx / observed_framerate
+            all_things[key].y += all_things[key].speedy / observed_framerate
         }
     }
 

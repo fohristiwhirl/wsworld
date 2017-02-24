@@ -39,7 +39,7 @@ func (e *Entity) Move() {
     e.Y += e.Speedy
 }
 
-func (e *Entity) Remove() {
+func (e *Entity) Remove() {             // Removes from canvas. Object still exists but can never be drawn.
     e.canvas.mutex.Lock()
     defer e.canvas.mutex.Unlock()
     delete(e.canvas.entities, e.id)
