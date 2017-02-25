@@ -56,8 +56,6 @@ const WEBPAGE = `<!DOCTYPE html>
 WebSocket frames: <span id="ws_frames">0</span>
 ---
 Total draws: <span id="total_draws">0</span>
----
-Interpolated draws: <span id="interp_draws">0</span>
 </p>
 
 {{.SoundLoaders}}
@@ -76,9 +74,8 @@ var have_drawn_last_ws_frame = false
 
 var ws_frames = 0
 var total_draws = 0
-var interp_draws = 0
 
-var last_draw_time = Date.now()
+var last_frame_time = Date.now()
 
 var virtue = document.querySelector("canvas").getContext("2d")
 document.querySelector("canvas").width = WIDTH
@@ -102,23 +99,15 @@ ws.onmessage = function (evt) {
         // Deal with visual frames.................................................................
 
         ws_frames += 1
+        last_frame_time = Date.now()
         have_drawn_last_ws_frame = false
 
         var len = stuff.length
         for (var n = 1 ; n < len ; n++) {
-
-            switch (stuff[n].charAt(0)) {
-            case "p":
-                parse_point(stuff[n])
-                break
-            case "s":
-                parse_sprite(stuff[n])
-                break
-            }
+            parse_point_or_sprite(stuff[n])                 // For now, all objects are sprites or points
         }
 
         for (var key in all_things) {
-
             if (all_things[key].last_seen < ws_frames) {    // We didn't see the object, so delete it
                 delete all_things[key]
                 continue
@@ -136,7 +125,7 @@ ws.onmessage = function (evt) {
     }
 };
 
-function parse_point(s) {
+function parse_point_or_sprite(s) {
 
     var elements = s.split(":")
     var id = elements[1]
@@ -151,7 +140,13 @@ function parse_point(s) {
 
     thing.type = elements[0]
     thing.id = elements[1]
-    thing.colour = elements[2]
+
+    if (thing.type == "p") {
+        thing.colour = elements[2]
+    } else if (thing.type == "s") {
+        thing.varname = elements[2]
+    }
+
     thing.x = parseFloat(elements[3])
     thing.y = parseFloat(elements[4])
     thing.speedx = parseFloat(elements[5])
@@ -160,44 +155,26 @@ function parse_point(s) {
     thing.last_seen = ws_frames
 }
 
-function draw_point(p) {
-    var x = Math.floor(p.x)
-    var y = Math.floor(p.y)
+function draw_point(p, time_offset) {
+    var x = Math.floor(p.x + p.speedx * time_offset / 1000)
+    var y = Math.floor(p.y + p.speedy * time_offset / 1000)
     virtue.fillStyle = p.colour
     virtue.fillRect(x, y, 1, 1)
 }
 
-function parse_sprite(s) {
-
-    var elements = s.split(":")
-    var id = elements[1]
-
-    var thing
-
-    if (all_things.hasOwnProperty(elements[1]) == false) {
-        all_things[id] = {}
-    }
-
-    thing = all_things[id]
-
-    thing.type = elements[0]
-    thing.id = elements[1]
-    thing.varname = elements[2]
-    thing.x = parseFloat(elements[3])
-    thing.y = parseFloat(elements[4])
-    thing.speedx = parseFloat(elements[5])
-    thing.speedy = parseFloat(elements[6])
-
-    thing.last_seen = ws_frames
-}
-
-function draw_sprite(sp) {
-    var x = sp.x - window[sp.varname].width / 2
-    var y = sp.y - window[sp.varname].height / 2
-    virtue.drawImage(window[sp.varname], x, y)
+function draw_sprite(sp, time_offset) {
+    var x = sp.x + sp.speedx * time_offset / 1000
+    var y = sp.y + sp.speedy * time_offset / 1000
+    virtue.drawImage(window[sp.varname], x - window[sp.varname].width / 2, y - window[sp.varname].height / 2)
 }
 
 function draw() {
+
+    // As a relatively simple way of dealing with arbitrary timings of incoming data, we
+    // always try to draw the object "where it is now" taking into account how long it's
+    // been since we received info about it. This is done with this "time_offset" var.
+
+    var time_offset = Date.now() - last_frame_time
 
     virtue.fillStyle = "black"
     virtue.fillRect(0, 0, {{.Width}}, {{.Height}})
@@ -206,35 +183,16 @@ function draw() {
 
         switch (all_things[key].type) {
         case "p":
-            draw_point(all_things[key])
+            draw_point(all_things[key], time_offset)
             break
         case "s":
-            draw_sprite(all_things[key])
+            draw_sprite(all_things[key], time_offset)
             break
         }
     }
-
-    last_draw_time = Date.now()
 }
 
 function animate() {
-
-    if (have_drawn_last_ws_frame === true) {
-
-        // We didn't receive a websocket message in time, so interpolate...
-
-        if (ws_frames > 0) {
-            interp_draws += 1
-        }
-
-        var observed_framerate = 1000 / (Date.now() - last_draw_time)
-
-        for (var key in all_things) {
-
-            all_things[key].x += all_things[key].speedx / observed_framerate
-            all_things[key].y += all_things[key].speedy / observed_framerate
-        }
-    }
 
     if (ws_frames > 0) {
         total_draws += 1
@@ -243,7 +201,6 @@ function animate() {
     if (total_draws % 10 === 0) {
         document.getElementById("ws_frames").innerHTML = ws_frames
         document.getElementById("total_draws").innerHTML = total_draws
-        document.getElementById("interp_draws").innerHTML = interp_draws
     }
 
     draw()
