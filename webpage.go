@@ -72,8 +72,6 @@ Total draws: <span id="total_draws">0</span>
 var WIDTH = {{.Width}}
 var HEIGHT = {{.Height}}
 
-var have_drawn_last_ws_frame = false
-
 var ws_frames = 0
 var total_draws = 0
 
@@ -105,8 +103,6 @@ ws.onmessage = function (evt) {
 
         second_last_frame_time = last_frame_time
         last_frame_time = Date.now()
-
-        have_drawn_last_ws_frame = false
 
         var len = stuff.length
         for (var n = 1 ; n < len ; n++) {
@@ -237,7 +233,6 @@ function animate() {
     }
 
     draw()
-    have_drawn_last_ws_frame = true
     requestAnimationFrame(animate)
 }
 
