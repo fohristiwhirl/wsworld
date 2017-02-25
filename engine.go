@@ -17,10 +17,6 @@ const VIRTUAL_WS_DIR = "/wsworld_websocket/"         // Path that the client thi
 // The engine singleton; it has a mutex for concurrent access...
 var eng engine
 
-// These variables are never concurrently accessed...
-var sprite_count int
-var sound_count int
-
 func init() {
     eng.sprites = make(map[string]*sprite)
     eng.sounds = make(map[string]*sound)
@@ -56,7 +52,10 @@ func RegisterSprite(filename string) {
         panic("RegisterSprite(): already started")
     }
 
-    varname := new_sprite_varname()
+    eng.mutex.Lock()
+    defer eng.mutex.Unlock()
+
+    varname := fmt.Sprintf("sprite%d", len(eng.sprites))
 
     newsprite := sprite{filename, varname}
     eng.sprites[filename] = &newsprite
@@ -68,7 +67,10 @@ func RegisterSound(filename string) {
         panic("RegisterSound(): already started")
     }
 
-    varname := new_sound_varname()
+    eng.mutex.Lock()
+    defer eng.mutex.Unlock()
+
+    varname := fmt.Sprintf("sound%d", len(eng.sprites))
 
     newsound := sound{filename, varname}
     eng.sounds[filename] = &newsound
@@ -205,14 +207,4 @@ func slash_at_both_ends(s string) string {
         s = s + "/"
     }
     return s
-}
-
-func new_sprite_varname() string {
-    sprite_count += 1
-    return fmt.Sprintf("sprite%d", sprite_count)
-}
-
-func new_sound_varname() string {
-    sound_count += 1
-    return fmt.Sprintf("sound%d", sound_count)
 }
