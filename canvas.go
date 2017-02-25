@@ -144,6 +144,9 @@ func (w *Canvas) Send() error {
             visual_slice = append(visual_slice,
                         fmt.Sprintf("p:i%d:%s:%.1f:%.1f:%.1f:%.1f", e.id, e.Colour, e.X, e.Y, e.Speedx * fps, e.Speedy * fps))
         }
+
+        // Note that Speedx and Speedy are multiplied by FPS to give distance per second. And that
+        // is the value that is sent to the client. The client uses this info for interpolation.
     }
 
     w.mutex.Unlock()
