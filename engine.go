@@ -14,7 +14,6 @@ import (
 const VIRTUAL_RESOURCE_DIR = "/wsworld_resources/"   // Path that the client thinks resources are at.
 const VIRTUAL_WS_DIR = "/wsworld_websocket/"         // Path that the client thinks websockets connect to.
 
-// The engine singleton; it has a mutex for concurrent access...
 var eng engine
 
 func init() {
@@ -24,16 +23,26 @@ func init() {
 }
 
 type engine struct {
+
+    mutex           sync.Mutex
+
+    // The following are written once only...
+
     started         bool
     fps             float64
     res_path_local  string
     title           string
     static          string
+
+    // The following are written several times at the beginning, then only read from...
+
     sprites         map[string]*sprite      // filename -> sprite
     sounds          map[string]*sound       // filename -> sound
+
+    // The following may be written or read at any time...
+
     keyboard        map[string]bool
     conn            *websocket.Conn
-    mutex           sync.Mutex
 }
 
 type sprite struct {
