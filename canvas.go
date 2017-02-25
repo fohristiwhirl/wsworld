@@ -14,8 +14,6 @@ import (
     "fmt"
     "strings"
     "sync"
-
-    "github.com/gorilla/websocket"
 )
 
 var next_entity_id int
@@ -115,7 +113,7 @@ func (w *Canvas) PlaySound(filename string) {
     w.soundqueue = append(w.soundqueue, varname)
 }
 
-func (w *Canvas) Send() error {
+func (w *Canvas) SendToAll() {
 
     fps := eng.fps                                  // Safe to read without mutex since there are no writes any more
 
@@ -159,34 +157,11 @@ func (w *Canvas) Send() error {
 
     // Send both...
 
-    var err error
-
-    eng.mutex.Lock()
-    if (eng.conn == nil) {
-
-        err = fmt.Errorf("connection was nil")
-
-    } else {
-
-        if len(w.soundqueue) > 0 {
-            err = eng.conn.WriteMessage(websocket.TextMessage, []byte(sound_message))
-        }
-
-        // If the audio send succeeded or wasn't attempted, we can also sent video...
-
-        if err == nil {
-            err = eng.conn.WriteMessage(websocket.TextMessage, []byte(visual_message))
-        }
+    if len(w.soundqueue) > 0 {
+        universal_message_chan <- sound_message
     }
-    eng.mutex.Unlock()
+    
+    universal_message_chan <- visual_message
 
-    w.mutex.Lock()
-    w.soundqueue = nil      // Always clear the sound queue regardless of send...
-    w.mutex.Unlock()
-
-    if err != nil {
-        return fmt.Errorf("Send(): %v", err)
-    }
-
-    return nil
+    w.soundqueue = nil
 }

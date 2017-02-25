@@ -19,7 +19,6 @@ var eng engine
 func init() {
     eng.sprites = make(map[string]*sprite)
     eng.sounds = make(map[string]*sound)
-    eng.keyboard = make(map[string]bool)
 }
 
 type engine struct {
@@ -38,11 +37,6 @@ type engine struct {
 
     sprites         map[string]*sprite      // filename -> sprite
     sounds          map[string]*sound       // filename -> sound
-
-    // The following may be written or read at any time...
-
-    keyboard        map[string]bool
-    conn            *websocket.Conn
 }
 
 type sprite struct {
@@ -109,18 +103,7 @@ func Start(title, server, normal_path, res_path_local string, width, height int,
     eng.static = static_webpage(eng.title, server, VIRTUAL_WS_DIR, VIRTUAL_RESOURCE_DIR, eng.sprites, eng.sounds, width, height)
 
     go http_startup(server, normal_path, VIRTUAL_WS_DIR, VIRTUAL_RESOURCE_DIR, res_path_local)
-}
-
-func KeyDown(key string) bool {
-    eng.mutex.Lock()
-    defer eng.mutex.Unlock()
-    return eng.keyboard[key]
-}
-
-func HaveConnection() bool {
-    eng.mutex.Lock()
-    defer eng.mutex.Unlock()
-    return eng.conn != nil
+    go connection_hub()
 }
 
 func http_startup(server, normal_path, ws_path, res_path_server, res_path_local string) {
@@ -141,6 +124,16 @@ func http_startup(server, normal_path, ws_path, res_path_server, res_path_local 
     http.ListenAndServe(server, nil)
 }
 
+var player_count int
+var player_count_mutex sync.Mutex
+
+func new_player_id() int {
+    player_count_mutex.Lock()
+    defer player_count_mutex.Unlock()
+    player_count++
+    return player_count - 1
+}
+
 func ws_handler(writer http.ResponseWriter, request * http.Request) {
 
     fmt.Printf("Connection opened: %s\n", request.RemoteAddr)
@@ -152,65 +145,55 @@ func ws_handler(writer http.ResponseWriter, request * http.Request) {
         return
     }
 
-    eng.mutex.Lock()
-    eng.conn = conn
-    eng.mutex.Unlock()
+    my_outgoing_msg_chan := make(chan string)
+    pid := new_player_id()
+
+    new_player_chan <- new_player{pid, my_outgoing_msg_chan}
+
+    go incoming_msg_handler(pid, conn, request.RemoteAddr)
 
     for {
+        m := <- my_outgoing_msg_chan
+        err := conn.WriteMessage(websocket.TextMessage, []byte(m))
 
+        if err != nil {
+            conn.Close()
+            remove_player_chan <- pid
+            return
+        }
+    }
+}
+
+func incoming_msg_handler(pid int, conn *websocket.Conn, remote_address string) {
+
+    for {
         _, reader, err := conn.NextReader()
 
         if err != nil {
             conn.Close()
-            fmt.Printf("Connection CLOSED: %s (%v)\n", request.RemoteAddr, err)
-
-            eng.mutex.Lock()
-            if eng.conn == conn {
-                eng.conn = nil
-            }
-            eng.mutex.Unlock()
-
-            return
-        }
-
-        var quit bool
-
-        eng.mutex.Lock()
-        if eng.conn != conn {                       // This conn has been replaced, so quit this handler
-            quit = true
-        }
-        eng.mutex.Unlock()
-
-        if quit {
-            conn.Close()
-            fmt.Printf("Connection CLOSED: %s (replaced by new incoming connection)\n", request.RemoteAddr)
+            fmt.Printf("Connection CLOSED: %s (%v)\n", remote_address, err)
+            remove_player_chan <- pid
             return
         }
 
         bytes, err := ioutil.ReadAll(reader)        // FIXME: this may be vulnerable to malicious huge messages
 
-        handle_message(string(bytes))
-    }
-}
+        fields := strings.Fields(string(bytes))
 
-func handle_message(msg string) {
+        switch fields[0] {
 
-    fields := strings.Fields(msg)
+        case "keyup":
 
-    eng.mutex.Lock()
-    defer eng.mutex.Unlock()
+            if len(fields) > 1 {
+                key_input_chan <- key_input{pid, fields[1], false}
+            }
 
-    switch fields[0] {
-    case "keyup":
-        if len(fields) < 2 {
-            return
+        case "keydown":
+
+            if len(fields) > 1 {
+                key_input_chan <- key_input{pid, fields[1], true}
+            }
         }
-        eng.keyboard[fields[1]] = false
-    case "keydown":
-        if len(fields) < 2 {
-            return
-        }
-        eng.keyboard[fields[1]] = true
     }
 }
 
