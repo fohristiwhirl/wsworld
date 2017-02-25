@@ -53,9 +53,9 @@ func (e *Entity) Exists() bool {
 }
 
 type Canvas struct {
-    mutex sync.Mutex
-    entities map[int]*Entity
-    soundqueue []string
+    mutex           sync.Mutex
+    entities        map[int]*Entity
+    soundqueue      []string
 }
 
 func NewCanvas() *Canvas {

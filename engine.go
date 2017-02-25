@@ -157,24 +157,30 @@ func ws_handler(writer http.ResponseWriter, request * http.Request) {
     eng.mutex.Unlock()
 
     for {
-        _, reader, err := conn.NextReader();
+
+        _, reader, err := conn.NextReader()
+
         if err != nil {
             conn.Close()
             fmt.Printf("Connection CLOSED: %s (%v)\n", request.RemoteAddr, err)
+
             eng.mutex.Lock()
             if eng.conn == conn {
                 eng.conn = nil
             }
             eng.mutex.Unlock()
+
             return
         }
 
         var quit bool
+
         eng.mutex.Lock()
         if eng.conn != conn {                       // This conn has been replaced, so quit this handler
             quit = true
         }
         eng.mutex.Unlock()
+
         if quit {
             conn.Close()
             fmt.Printf("Connection CLOSED: %s (replaced by new incoming connection)\n", request.RemoteAddr)
