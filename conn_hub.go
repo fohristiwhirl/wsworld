@@ -24,11 +24,11 @@ type key_query struct {
 
 // Internal comm channels...
 
-var remove_player_chan chan int = make(chan int)
-var new_player_chan chan new_player = make(chan new_player)
-var message_relay_chan chan out_message = make(chan out_message)
-var universal_message_chan chan string = make(chan string)
-var key_input_chan chan key_input = make(chan key_input)
+var remove_player_chan chan int = make(chan int, 16)
+var new_player_chan chan new_player = make(chan new_player, 16)
+var message_relay_chan chan out_message = make(chan out_message, 16)
+var universal_message_chan chan string = make(chan string, 16)
+var key_input_chan chan key_input = make(chan key_input, 16)
 
 // Queries from app...
 
@@ -74,8 +74,8 @@ func connection_hub() {
             p, ok := known_players[ms.pid]
 
             if ok {
-                select {                                // Sending might fail if the ws_handler goroutine has quit, so use select
-                case p.message_chan <- ms.message:      // But otherwise, the ws_handler will generally be ready for this message
+                select {                                // Don't send if we somehow can't. Should be impossible with our big buffer.
+                case p.message_chan <- ms.message:
                 default:
                 }
             }
@@ -84,8 +84,8 @@ func connection_hub() {
         case universal_msg := <- universal_message_chan:
 
             for _, p := range known_players {
-                select {                                // Sending might fail if the ws_handler goroutine has quit, so use select
-                case p.message_chan <- universal_msg:   // But otherwise, the ws_handler will generally be ready for this message
+                select {
+                case p.message_chan <- universal_msg:
                 default:
                 }
             }
@@ -135,20 +135,20 @@ func connection_hub() {
 }
 
 func KeyDown(pid int, key string) bool {
-    response_chan := make(chan bool)
+    response_chan := make(chan bool, 1)
     q := key_query{pid, key, response_chan}
     key_query_chan <- q
     return <- response_chan
 }
 
 func PlayerCount() int {
-    response_chan := make(chan int)
+    response_chan := make(chan int, 1)
     conn_count_query_chan <- response_chan
     return <- response_chan
 }
 
 func PlayerSet() map[int]bool {
-    response_chan := make(chan map[int]bool)
+    response_chan := make(chan map[int]bool, 1)
     conn_set_query_chan <- response_chan
     return <- response_chan
 }
