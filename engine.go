@@ -48,12 +48,12 @@ type sound struct {
 
 func RegisterSprite(filename string) {
 
+    eng.mutex.Lock()
+    defer eng.mutex.Unlock()
+
     if eng.started {
         panic("RegisterSprite(): already started")
     }
-
-    eng.mutex.Lock()
-    defer eng.mutex.Unlock()
 
     varname := fmt.Sprintf("sprite%d", len(eng.sprites))
 
@@ -63,12 +63,12 @@ func RegisterSprite(filename string) {
 
 func RegisterSound(filename string) {
 
+    eng.mutex.Lock()
+    defer eng.mutex.Unlock()
+
     if eng.started {
         panic("RegisterSound(): already started")
     }
-
-    eng.mutex.Lock()
-    defer eng.mutex.Unlock()
 
     varname := fmt.Sprintf("sound%d", len(eng.sprites))
 
@@ -78,9 +78,14 @@ func RegisterSound(filename string) {
 
 func Start(title, server, normal_path, res_path_local string, width, height int, fps float64) {
 
+    eng.mutex.Lock()            // Really just for the .started var
+    defer eng.mutex.Unlock()
+
     if eng.started {
         panic("wsengine.Start(): already started")
     }
+
+    eng.started = true
 
     if res_path_local == "" {
         res_path_local = "not_in_use"
@@ -88,7 +93,6 @@ func Start(title, server, normal_path, res_path_local string, width, height int,
 
     normal_path = slash_at_both_ends(normal_path)
 
-    eng.started = true
     eng.title = title
     eng.res_path_local = res_path_local
     eng.fps = fps
