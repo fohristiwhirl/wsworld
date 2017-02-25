@@ -44,6 +44,8 @@ func static_webpage(title, server, virtual_ws_path, virtual_res_path string, spr
     return webpage.String()
 }
 
+// Terminology note! A "frame" should always mean a visual websocket message.
+
 const WEBPAGE = `<!DOCTYPE html>
 <html>
 <head>
@@ -75,6 +77,7 @@ var have_drawn_last_ws_frame = false
 var ws_frames = 0
 var total_draws = 0
 
+var second_last_frame_time = Date.now() - 16
 var last_frame_time = Date.now()
 
 var virtue = document.querySelector("canvas").getContext("2d")
@@ -99,7 +102,10 @@ ws.onmessage = function (evt) {
         // Deal with visual frames.................................................................
 
         ws_frames += 1
+
+        second_last_frame_time = last_frame_time
         last_frame_time = Date.now()
+
         have_drawn_last_ws_frame = false
 
         var len = stuff.length
@@ -147,12 +153,39 @@ function parse_point_or_sprite(s) {
         thing.varname = elements[2]
     }
 
-    thing.x = parseFloat(elements[3])
-    thing.y = parseFloat(elements[4])
-    thing.speedx = parseFloat(elements[5])
-    thing.speedy = parseFloat(elements[6])
+    var frame_x = parseFloat(elements[3])
+    var frame_y = parseFloat(elements[4])
+    var frame_speedx = parseFloat(elements[5])
+    var frame_speedy = parseFloat(elements[6])
+
+    do_latency_compensation(thing, frame_x, frame_y, frame_speedx, frame_speedy)
 
     thing.last_seen = ws_frames
+}
+
+function do_latency_compensation(thing, frame_x, frame_y, frame_speedx, frame_speedy) {
+
+    if (
+        all_things.hasOwnProperty("x")      == false ||
+        all_things.hasOwnProperty("y")      == false ||
+        all_things.hasOwnProperty("speedx") == false ||
+        all_things.hasOwnProperty("speedy") == false
+    ) {
+        thing.x = frame_x
+        thing.y = frame_y
+        thing.speedx = frame_speedx
+        thing.speedy = frame_speedy
+        return
+    }
+
+    // Here would be our lag compensation, if we had written it.
+
+    var ws_frame_time = last_frame_time - second_last_frame_time
+
+    thing.x = frame_x
+    thing.y = frame_y
+    thing.speedx = frame_speedx
+    thing.speedy = frame_speedy
 }
 
 function draw_point(p, time_offset) {
