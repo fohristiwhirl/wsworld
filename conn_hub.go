@@ -22,11 +22,16 @@ type key_query struct {
     response_chan   chan bool
 }
 
+// Internal comm channels...
+
 var remove_player_chan chan int = make(chan int)
 var new_player_chan chan new_player = make(chan new_player)
 var message_relay_chan chan out_message = make(chan out_message)
 var universal_message_chan chan string = make(chan string)
 var key_input_chan chan key_input = make(chan key_input)
+
+// Queries from app...
+
 var key_query_chan chan key_query = make(chan key_query)
 var conn_count_query_chan chan chan int = make(chan chan int)
 var conn_set_query_chan chan chan map[int]bool = make(chan chan map[int]bool)
@@ -41,6 +46,8 @@ func connection_hub() {
 
     known_players := make(map[int]*player)
 
+    var latest_player int
+
     for {
 
         select {
@@ -53,8 +60,13 @@ func connection_hub() {
         // A connection was opened........................................
         case np := <- new_player_chan:
 
+            if eng.multiplayer == false {
+                delete(known_players, latest_player)
+            }
+
             keyboard := make(map[string]bool)
             known_players[np.pid] = &player{np.pid, np.message_chan, keyboard}
+            latest_player = np.pid
 
         // A message was received for a client............................
         case ms := <- message_relay_chan:
@@ -89,6 +101,10 @@ func connection_hub() {
 
         // Key was queried................................................
         case key_query := <- key_query_chan:
+
+            if key_query.pid == -1 {
+                key_query.pid = latest_player
+            }
 
             p, ok := known_players[key_query.pid]
 

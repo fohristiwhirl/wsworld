@@ -32,6 +32,7 @@ type engine struct {
     res_path_local  string
     title           string
     static          string
+    multiplayer     bool
 
     // The following are written several times at the beginning, then only read from...
 
@@ -79,7 +80,7 @@ func RegisterSound(filename string) {
     eng.sounds[filename] = &newsound
 }
 
-func Start(title, server, normal_path, res_path_local string, width, height int, fps float64) {
+func Start(title, server, normal_path, res_path_local string, width, height int, fps float64, multiplayer bool) {
 
     eng.mutex.Lock()            // Really just for the .started var
     defer eng.mutex.Unlock()
@@ -99,6 +100,7 @@ func Start(title, server, normal_path, res_path_local string, width, height int,
     eng.title = title
     eng.res_path_local = res_path_local
     eng.fps = fps
+    eng.multiplayer = multiplayer
 
     eng.static = static_webpage(eng.title, server, VIRTUAL_WS_DIR, VIRTUAL_RESOURCE_DIR, eng.sprites, eng.sounds, width, height)
 
