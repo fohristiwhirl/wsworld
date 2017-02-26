@@ -146,7 +146,7 @@ func PlayerSet() map[int]bool {
 
     set := make(map[int]bool)
 
-    for key, _ := range eng.players {
+    for key, _ := range eng.players {       // Relies on us actually deleting players when they leave, not just setting them to nil
         set[key] = true
     }
 

@@ -10,15 +10,20 @@ import (
     "github.com/gorilla/websocket"
 )
 
-var player_count int
-var player_count_mutex sync.Mutex
-
-func new_player_id() int {
-    player_count_mutex.Lock()
-    defer player_count_mutex.Unlock()
-    player_count++
-    return player_count - 1
+type safe_counter_struct struct {
+    i       int
+    mutex   sync.Mutex
 }
+
+func (sc *safe_counter_struct) Next() int {
+    sc.mutex.Lock()
+    defer sc.mutex.Unlock()
+    sc.i += 1
+    return sc.i - 1
+}
+
+var player_id_counter safe_counter_struct
+
 
 func ws_handler(writer http.ResponseWriter, request * http.Request) {
 
@@ -31,7 +36,7 @@ func ws_handler(writer http.ResponseWriter, request * http.Request) {
         return
     }
 
-    pid := new_player_id()
+    pid := player_id_counter.Next()
 
     eng.mutex.Lock()
 
