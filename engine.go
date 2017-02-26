@@ -140,6 +140,16 @@ func PlayerSet() map[int]bool {
     return set
 }
 
+func SendDebugToAll(msg string) {
+    b := []byte("d " + msg)
+
+    eng.mutex.Lock()
+    for _, player := range eng.players {
+        player.conn.WriteMessage(websocket.TextMessage, b)
+    }
+    eng.mutex.Unlock()
+}
+
 func http_startup(server, normal_path, ws_path, res_path_server, res_path_local string) {
 
     // FIXME: how safe is the following, exactly?

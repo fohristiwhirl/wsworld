@@ -58,6 +58,8 @@ const WEBPAGE = `<!DOCTYPE html>
 WebSocket frames: <span id="ws_frames">0</span>
 ---
 Total draws: <span id="total_draws">0</span>
+
+<span id="debug_msg"></span>
 </p>
 
 {{.SoundLoaders}}
@@ -65,7 +67,7 @@ Total draws: <span id="total_draws">0</span>
 <canvas style="display: block; margin: 0 auto; border-style: dashed; border-color: #666666"></canvas>
 
 <script>
-"use strict";
+"use strict"
 
 {{.ImageLoaders}}
 
@@ -92,7 +94,7 @@ ws.onopen = function (evt) {
 
 ws.onmessage = function (evt) {
 
-    var stuff = evt.data.split(" ");
+    var stuff = evt.data.split(" ")
     var frame_type = stuff[0]
 
     if (frame_type === "v") {
@@ -119,8 +121,16 @@ ws.onmessage = function (evt) {
         for (var n = 1 ; n < len ; n++) {
             play_multi_sound(stuff[n])
         }
+
+    } else if (frame_type === "d") {
+
+        // Debug messages..........................................................................
+
+        if (evt.data.length > 2) {
+            document.getElementById("debug_msg").innerHTML = "--- " + evt.data.slice(2)
+        }
     }
-};
+}
 
 function parse_point_or_sprite(s) {
 
