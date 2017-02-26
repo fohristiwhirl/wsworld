@@ -272,22 +272,21 @@ document.addEventListener("keyup", function(evt) {
 
 // Sound from Thomas Sturm: http://www.storiesinflight.com/html5/audio.html
 
-var channel_max = 10
-var audiochannels = new Array()
+var channel_max = 8
+var audiochannels = []
+
 for (var a = 0 ; a < channel_max ; a++) {
-    audiochannels[a] = new Array()
-    audiochannels[a]["channel"] = new Audio()
-    audiochannels[a]["finished"] = -1
+    audiochannels[a] = {channel: new Audio(), finished: -1}
 }
 
 function play_multi_sound(s) {
     for (var a = 0 ; a < audiochannels.length ; a++) {
         var thistime = new Date()
-        if (audiochannels[a]["finished"] < thistime.getTime()) {
-            audiochannels[a]["finished"] = thistime.getTime() + document.getElementById(s).duration * 1000
-            audiochannels[a]["channel"].src = document.getElementById(s).src
-            audiochannels[a]["channel"].load()
-            audiochannels[a]["channel"].play()
+        if (audiochannels[a].finished < thistime.getTime()) {
+            audiochannels[a].finished = thistime.getTime() + document.getElementById(s).duration * 1000
+            audiochannels[a].channel.src = document.getElementById(s).src
+            audiochannels[a].channel.load()
+            audiochannels[a].channel.play()
             break
         }
     }
