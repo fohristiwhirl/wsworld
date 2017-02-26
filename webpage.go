@@ -17,21 +17,21 @@ type Variables struct {
     SoundLoaders    string
 }
 
-func static_webpage(title, server, virtual_ws_path, virtual_res_path string, sprites map[string]*sprite, sounds map[string]*sound, width, height int) string {
+func static_webpage(title, server, virtual_ws_path, virtual_res_path string, sprites map[string]string, sounds map[string]string, width, height int) string {
 
     var imageloaders []string
     var soundloaders []string
 
-    for _, sprite := range sprites {
+    for filename, varname := range sprites {
         imageloaders = append(imageloaders, fmt.Sprintf(
             "var %s = new Image(); %s.src = \"http://%s%s%s\";",
-            sprite.varname, sprite.varname, server, virtual_res_path, sprite.filename))
+            varname, varname, server, virtual_res_path, filename))
     }
 
-    for _, sound := range sounds {
+    for filename, varname := range sounds {
         soundloaders = append(soundloaders, fmt.Sprintf(
             "<audio id=\"%s\" src=\"http://%s%s%s\" preload=\"auto\"></audio>",
-            sound.varname, server, virtual_res_path, sound.filename))
+            varname, server, virtual_res_path, filename))
     }
 
     joined_imageloaders := strings.Join(imageloaders, "\n")

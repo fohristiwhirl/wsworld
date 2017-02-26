@@ -84,7 +84,7 @@ func (w *Canvas) AddPoint(colour string, x, y, speedx, speedy float64) {
 func (w *Canvas) AddSprite(filename string, x, y, speedx, speedy float64) {
     w.mutex.Lock()
     defer w.mutex.Unlock()
-    varname := eng.sprites[filename].varname        // Safe to read without mutex since there are no writes any more
+    varname := eng.sprites[filename]        // Safe to read without mutex since there are no writes any more
     w.entities = append(w.entities, fmt.Sprintf("s:%s:%.1f:%.1f:%.1f:%.1f", varname, x, y, speedx * eng.fps, speedy * eng.fps))
 }
 
@@ -97,11 +97,10 @@ func (z *Soundscape) PlaySound(filename string) {
         return
     }
 
-    sound := eng.sounds[filename]                   // Safe to read without mutex since there are no writes any more
-    if sound == nil {
+    varname := eng.sounds[filename]         // Safe to read without mutex since there are no writes any more
+    if varname == "" {
         return
     }
-    varname := sound.varname
     z.soundqueue = append(z.soundqueue, varname)
 }
 

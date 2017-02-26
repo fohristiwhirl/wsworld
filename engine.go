@@ -16,8 +16,8 @@ const VIRTUAL_WS_DIR = "/wsworld_websocket/"         // Path that the client thi
 var eng engine
 
 func init() {
-    eng.sprites = make(map[string]*sprite)
-    eng.sounds = make(map[string]*sound)
+    eng.sprites = make(map[string]string)
+    eng.sounds = make(map[string]string)
     eng.players = make(map[int]*player)
 }
 
@@ -36,23 +36,13 @@ type engine struct {
 
     // The following are written several times at the beginning, then only read from...
 
-    sprites         map[string]*sprite      // filename -> sprite
-    sounds          map[string]*sound       // filename -> sound
+    sprites         map[string]string       // filename -> varname
+    sounds          map[string]string       // filename -> varname
 
     // Written often...
 
     players         map[int]*player
     latest_player   int
-}
-
-type sprite struct {
-    filename        string
-    varname         string
-}
-
-type sound struct {
-    filename        string
-    varname         string
 }
 
 type player struct {
@@ -70,10 +60,7 @@ func RegisterSprite(filename string) {
         panic("RegisterSprite(): already started")
     }
 
-    varname := fmt.Sprintf("sprite%d", len(eng.sprites))
-
-    newsprite := sprite{filename, varname}
-    eng.sprites[filename] = &newsprite
+    eng.sprites[filename] = fmt.Sprintf("sprite%d", len(eng.sprites))
 }
 
 func RegisterSound(filename string) {
@@ -85,10 +72,7 @@ func RegisterSound(filename string) {
         panic("RegisterSound(): already started")
     }
 
-    varname := fmt.Sprintf("sound%d", len(eng.sprites))
-
-    newsound := sound{filename, varname}
-    eng.sounds[filename] = &newsound
+    eng.sounds[filename] = fmt.Sprintf("sound%d", len(eng.sprites))
 }
 
 func Start(title, server, normal_path, res_path_local string, width, height int, fps float64, multiplayer bool) {
