@@ -88,6 +88,12 @@ func (w *Canvas) AddSprite(filename string, x, y, speedx, speedy float64) {
     w.entities = append(w.entities, fmt.Sprintf("s:%s:%.1f:%.1f:%.1f:%.1f", varname, x, y, speedx * eng.fps, speedy * eng.fps))
 }
 
+func (w *Canvas) AddLine(colour string, x1, y1, x2, y2, speedx, speedy float64) {
+    w.mutex.Lock()
+    defer w.mutex.Unlock()
+    w.entities = append(w.entities, fmt.Sprintf("l:%s:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f", colour, x1, y1, x2, y2, speedx * eng.fps, speedy * eng.fps))
+}
+
 func (z *Soundscape) PlaySound(filename string) {
 
     z.mutex.Lock()

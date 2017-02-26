@@ -110,7 +110,17 @@ ws.onmessage = function (evt) {
 
         var len = stuff.length
         for (var n = 1 ; n < len ; n++) {
-            parse_point_or_sprite(stuff[n])                 // For now, all objects are sprites or points
+
+            switch (stuff[n].charAt(0)) {
+
+            case "p":
+            case "s":
+                parse_point_or_sprite(stuff[n])
+                break
+            case "l":
+                parse_line(stuff[n])
+                break
+            }
         }
 
     } else if (frame_type === "a") {
@@ -127,15 +137,14 @@ ws.onmessage = function (evt) {
         // Debug messages..........................................................................
 
         if (evt.data.length > 2) {
-            document.getElementById("debug_msg").innerHTML = "--- " + evt.data.slice(2)
+            display_debug_message(evt.data.slice(2))
         }
     }
 }
 
-function parse_point_or_sprite(s) {
+function parse_point_or_sprite(blob) {
 
-    var elements = s.split(":")
-    var id = elements[1]
+    var elements = blob.split(":")
 
     var thing = {}
 
@@ -155,6 +164,24 @@ function parse_point_or_sprite(s) {
     all_things.push(thing)
 }
 
+function parse_line(blob) {
+
+    var elements = blob.split(":")
+
+    var thing = {}
+
+    thing.type = elements[0]
+    thing.colour = elements[1]
+    thing.x1 = parseFloat(elements[2])
+    thing.y1 = parseFloat(elements[3])
+    thing.x2 = parseFloat(elements[4])
+    thing.y2 = parseFloat(elements[5])
+    thing.speedx = parseFloat(elements[6])
+    thing.speedy = parseFloat(elements[7])
+
+    all_things.push(thing)
+}
+
 function draw_point(p, time_offset) {
     var x = Math.floor(p.x + p.speedx * time_offset / 1000)
     var y = Math.floor(p.y + p.speedy * time_offset / 1000)
@@ -168,6 +195,19 @@ function draw_sprite(sp, time_offset) {
     virtue.drawImage(window[sp.varname], x - window[sp.varname].width / 2, y - window[sp.varname].height / 2)
 }
 
+function draw_line(li, time_offset) {
+    var x1 = li.x1 + li.speedx * time_offset / 1000
+    var y1 = li.y1 + li.speedy * time_offset / 1000
+    var x2 = li.x2 + li.speedx * time_offset / 1000
+    var y2 = li.y2 + li.speedy * time_offset / 1000
+
+    virtue.strokeStyle = li.colour
+    virtue.beginPath()                  // For reasons unknown to me, without this, lines persist forever
+    virtue.moveTo(x1, y1)
+    virtue.lineTo(x2, y2)
+    virtue.stroke()
+}
+
 function draw() {
 
     // As a relatively simple way of dealing with arbitrary timings of incoming data, we
@@ -176,8 +216,7 @@ function draw() {
 
     var time_offset = Date.now() - last_frame_time
 
-    virtue.fillStyle = "black"
-    virtue.fillRect(0, 0, {{.Width}}, {{.Height}})
+    virtue.clearRect(0, 0, {{.Width}}, {{.Height}})     // The best way to clear the canvas??
 
     var len = all_things.length
     for (var n = 0 ; n < len ; n++) {
@@ -188,6 +227,9 @@ function draw() {
             break
         case "s":
             draw_sprite(all_things[n], time_offset)
+            break
+        case "l":
+            draw_line(all_things[n], time_offset)
             break
         }
     }
@@ -206,6 +248,10 @@ function animate() {
 
     draw()
     requestAnimationFrame(animate)
+}
+
+function display_debug_message(s) {
+    document.getElementById("debug_msg").innerHTML = "--- " + s
 }
 
 document.addEventListener("keydown", function(evt) {
