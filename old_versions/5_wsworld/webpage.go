@@ -82,7 +82,7 @@ var virtue = document.querySelector("canvas").getContext("2d")
 document.querySelector("canvas").width = WIDTH
 document.querySelector("canvas").height = HEIGHT
 
-var all_things = []
+var all_things = {}
 
 var ws = new WebSocket("ws://{{.Server}}{{.WsPath}}")
 
@@ -99,8 +99,6 @@ ws.onmessage = function (evt) {
 
         // Deal with visual frames.................................................................
 
-        all_things.length = 0
-
         ws_frames += 1
 
         second_last_frame_time = last_frame_time
@@ -109,6 +107,13 @@ ws.onmessage = function (evt) {
         var len = stuff.length
         for (var n = 1 ; n < len ; n++) {
             parse_point_or_sprite(stuff[n])                 // For now, all objects are sprites or points
+        }
+
+        for (var key in all_things) {
+            if (all_things[key].last_seen < ws_frames) {    // We didn't see the object, so delete it
+                delete all_things[key]
+                continue
+            }
         }
 
     } else if (frame_type === "a") {
@@ -127,22 +132,56 @@ function parse_point_or_sprite(s) {
     var elements = s.split(":")
     var id = elements[1]
 
-    var thing = {}
+    var thing
 
-    thing.type = elements[0]
-
-    if (thing.type == "p") {
-        thing.colour = elements[1]
-    } else if (thing.type == "s") {
-        thing.varname = elements[1]
+    if (all_things.hasOwnProperty(id) == false) {
+        all_things[id] = {}
     }
 
-    thing.x = parseFloat(elements[2])
-    thing.y = parseFloat(elements[3])
-    thing.speedx = parseFloat(elements[4])
-    thing.speedy = parseFloat(elements[5])
+    thing = all_things[id]
 
-    all_things.push(thing)
+    thing.type = elements[0]
+    thing.id = elements[1]
+
+    if (thing.type == "p") {
+        thing.colour = elements[2]
+    } else if (thing.type == "s") {
+        thing.varname = elements[2]
+    }
+
+    var frame_x = parseFloat(elements[3])
+    var frame_y = parseFloat(elements[4])
+    var frame_speedx = parseFloat(elements[5])
+    var frame_speedy = parseFloat(elements[6])
+
+    do_latency_compensation(thing, frame_x, frame_y, frame_speedx, frame_speedy)
+
+    thing.last_seen = ws_frames
+}
+
+function do_latency_compensation(thing, frame_x, frame_y, frame_speedx, frame_speedy) {
+
+    if (
+        all_things.hasOwnProperty("x")      == false ||
+        all_things.hasOwnProperty("y")      == false ||
+        all_things.hasOwnProperty("speedx") == false ||
+        all_things.hasOwnProperty("speedy") == false
+    ) {
+        thing.x = frame_x
+        thing.y = frame_y
+        thing.speedx = frame_speedx
+        thing.speedy = frame_speedy
+        return
+    }
+
+    // Here would be our lag compensation, if we had written it.
+
+    var ws_frame_time = last_frame_time - second_last_frame_time
+
+    thing.x = frame_x
+    thing.y = frame_y
+    thing.speedx = frame_speedx
+    thing.speedy = frame_speedy
 }
 
 function draw_point(p, time_offset) {
@@ -169,15 +208,14 @@ function draw() {
     virtue.fillStyle = "black"
     virtue.fillRect(0, 0, {{.Width}}, {{.Height}})
 
-    var len = all_things.length
-    for (var n = 0 ; n < len ; n++) {
+    for (var key in all_things) {
 
-        switch (all_things[n].type) {
+        switch (all_things[key].type) {
         case "p":
-            draw_point(all_things[n], time_offset)
+            draw_point(all_things[key], time_offset)
             break
         case "s":
-            draw_sprite(all_things[n], time_offset)
+            draw_sprite(all_things[key], time_offset)
             break
         }
     }
