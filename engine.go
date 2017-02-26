@@ -36,8 +36,8 @@ type engine struct {
 
     // The following are written several times at the beginning, then only read from...
 
-    sprites         map[string]string       // filename -> varname
-    sounds          map[string]string       // filename -> varname
+    sprites         map[string]string       // filename -> JS varname
+    sounds          map[string]string       // filename -> JS varname
 
     // Written often...
 
