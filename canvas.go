@@ -1,15 +1,5 @@
 package wsworld
 
-// PRINCIPLES:
-// Adding entities to a canvas should be thread-safe.
-// Operating on different entities concurrently should be thread-safe.
-// Operating on the same entity concurrently is NOT thread-safe.
-// Operating on an entity that has been removed from the map is harmless.
-//
-// THEREFORE:
-// Accessing the canvas requires a mutex.
-// But no mutex is needed for entities.
-
 import (
     "fmt"
     "strings"
