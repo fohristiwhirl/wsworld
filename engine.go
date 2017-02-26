@@ -135,12 +135,15 @@ func KeyDown(pid int, key string) bool {
 }
 
 func PlayerCount() int {
+
     eng.mutex.Lock()
     defer eng.mutex.Unlock()
+
     return len(eng.players)
 }
 
 func PlayerSet() map[int]bool {
+
     eng.mutex.Lock()
     defer eng.mutex.Unlock()
 
