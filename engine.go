@@ -6,6 +6,8 @@ import (
     "path/filepath"
     "strings"
     "sync"
+
+    "github.com/gorilla/websocket"
 )
 
 const VIRTUAL_RESOURCE_DIR = "/wsworld_resources/"   // Path that the client thinks resources are at.
