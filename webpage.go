@@ -202,10 +202,11 @@ function draw_line(li, time_offset) {
     var y2 = li.y2 + li.speedy * time_offset / 1000
 
     virtue.strokeStyle = li.colour
-    virtue.beginPath()                  // For reasons unknown to me, without this, lines persist forever
+    virtue.beginPath()
     virtue.moveTo(x1, y1)
     virtue.lineTo(x2, y2)
     virtue.stroke()
+    virtue.closePath()
 }
 
 function draw() {
