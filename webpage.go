@@ -206,7 +206,6 @@ function draw_line(li, time_offset) {
     virtue.moveTo(x1, y1)
     virtue.lineTo(x2, y2)
     virtue.stroke()
-    virtue.closePath()
 }
 
 function draw() {
