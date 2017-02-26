@@ -216,7 +216,7 @@ function draw() {
 
     var time_offset = Date.now() - last_frame_time
 
-    virtue.clearRect(0, 0, {{.Width}}, {{.Height}})     // The best way to clear the canvas??
+    virtue.clearRect(0, 0, WIDTH, HEIGHT)     // The best way to clear the canvas??
 
     var len = all_things.length
     for (var n = 0 ; n < len ; n++) {
