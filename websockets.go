@@ -33,6 +33,7 @@ func ws_handler(writer http.ResponseWriter, request * http.Request) {
 
     conn, err := upgrader.Upgrade(writer, request, nil)
     if err != nil {
+        fmt.Printf("Upgrade failed: %v\n", err)
         return
     }
 
