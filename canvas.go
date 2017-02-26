@@ -24,8 +24,20 @@ func (w *Canvas) Clear() {
     w.entities = []string{"v"}
 }
 func (w *Canvas) Bytes() []byte {
+
     w.mutex.Lock()
     defer w.mutex.Unlock()
+
+    // The following checks discover if the app has done something weird to the struct...
+
+    if len(w.entities) == 0 {
+        w.Clear()
+    }
+
+    if w.entities[0] != "v" {
+        w.entities = append([]string{"v"}, w.entities...)
+    }
+
     return []byte(strings.Join(w.entities, " "))
 }
 
@@ -45,8 +57,20 @@ func (z *Soundscape) Clear() {
     z.soundqueue = []string{"a"}
 }
 func (z *Soundscape) Bytes() []byte {
+
     z.mutex.Lock()
     defer z.mutex.Unlock()
+
+    // The following checks discover if the app has done something weird to the struct...
+
+    if len(z.soundqueue) == 0 {
+        z.Clear()
+    }
+
+    if z.soundqueue[0] != "a" {
+        z.soundqueue = append([]string{"a"}, z.soundqueue...)
+    }
+
     return []byte(strings.Join(z.soundqueue, " "))
 }
 
