@@ -69,7 +69,7 @@ func (w *Canvas) SendToAll() {
 
     var havesounds bool
 
-    if len(w.soundqueue) > 0{
+    if len(w.soundqueue) > 1 {                      // The queue now contains the header as 1st item
         havesounds = true
     }
 
