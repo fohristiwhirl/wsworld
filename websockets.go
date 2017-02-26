@@ -75,19 +75,23 @@ func ws_handler(writer http.ResponseWriter, request * http.Request) {
 
         case "keyup":
 
-            eng.mutex.Lock()
-            if eng.players[pid] != nil {
-                eng.players[pid].keyboard[fields[1]] = false
+            if len(fields) > 1 {
+                eng.mutex.Lock()
+                if eng.players[pid] != nil {
+                    eng.players[pid].keyboard[fields[1]] = false
+                }
+                eng.mutex.Unlock()
             }
-            eng.mutex.Unlock()
 
         case "keydown":
 
-            eng.mutex.Lock()
-            if eng.players[pid] != nil {
-                eng.players[pid].keyboard[fields[1]] = true
+            if len(fields) > 1 {
+                eng.mutex.Lock()
+                if eng.players[pid] != nil {
+                    eng.players[pid].keyboard[fields[1]] = true
+                }
+                eng.mutex.Unlock()
             }
-            eng.mutex.Unlock()
         }
     }
 }
