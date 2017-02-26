@@ -16,13 +16,21 @@ type Canvas struct {
 
 func NewCanvas() *Canvas {
     ret := new(Canvas)
+    ret.Clear()
+    ret.ClearSounds()
     return ret
 }
 
 func (w *Canvas) Clear() {
     w.mutex.Lock()
     defer w.mutex.Unlock()
-    w.entities = nil
+    w.entities = []string{"v"}
+}
+
+func (w *Canvas) ClearSounds() {
+    w.mutex.Lock()
+    defer w.mutex.Unlock()
+    w.soundqueue = []string{"a"}
 }
 
 func (w *Canvas) AddPoint(colour string, x, y, speedx, speedy float64) {
@@ -65,8 +73,8 @@ func (w *Canvas) SendToAll() {
         havesounds = true
     }
 
-    visual_message := []byte("v " + strings.Join(w.entities, " "))      // Header: "v" for "visual"
-    sound_message := []byte("a " + strings.Join(w.soundqueue, " "))     // Header: "a" for "audio"
+    visual_message := []byte(strings.Join(w.entities, " "))
+    sound_message := []byte(strings.Join(w.soundqueue, " "))
 
     w.mutex.Unlock()
 
@@ -86,8 +94,6 @@ func (w *Canvas) SendToAll() {
     eng.mutex.Unlock()
 
     if havesounds {
-        w.mutex.Lock()
-        w.soundqueue = nil
-        w.mutex.Unlock()
+        w.ClearSounds()
     }
 }
