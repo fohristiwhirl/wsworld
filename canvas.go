@@ -8,30 +8,48 @@ import (
     "github.com/gorilla/websocket"
 )
 
+
 type Canvas struct {
     mutex           sync.Mutex
     entities        []string
-    soundqueue      []string
 }
-
 func NewCanvas() *Canvas {
     ret := new(Canvas)
     ret.Clear()
-    ret.ClearSounds()
     return ret
 }
-
 func (w *Canvas) Clear() {
     w.mutex.Lock()
     defer w.mutex.Unlock()
     w.entities = []string{"v"}
 }
-
-func (w *Canvas) ClearSounds() {
+func (w *Canvas) Bytes() []byte {
     w.mutex.Lock()
     defer w.mutex.Unlock()
-    w.soundqueue = []string{"a"}
+    return []byte(strings.Join(w.entities, " "))
 }
+
+
+type Soundscape struct {
+    mutex           sync.Mutex
+    soundqueue      []string
+}
+func NewSoundscape() *Soundscape {
+    ret := new(Soundscape)
+    ret.Clear()
+    return ret
+}
+func (z *Soundscape) Clear() {
+    z.mutex.Lock()
+    defer z.mutex.Unlock()
+    z.soundqueue = []string{"a"}
+}
+func (z *Soundscape) Bytes() []byte {
+    z.mutex.Lock()
+    defer z.mutex.Unlock()
+    return []byte(strings.Join(z.soundqueue, " "))
+}
+
 
 func (w *Canvas) AddPoint(colour string, x, y, speedx, speedy float64) {
     w.mutex.Lock()
@@ -46,12 +64,12 @@ func (w *Canvas) AddSprite(filename string, x, y, speedx, speedy float64) {
     w.entities = append(w.entities, fmt.Sprintf("s:%s:%.1f:%.1f:%.1f:%.1f", varname, x, y, speedx * eng.fps, speedy * eng.fps))
 }
 
-func (w *Canvas) PlaySound(filename string) {
+func (z *Soundscape) PlaySound(filename string) {
 
-    w.mutex.Lock()
-    defer w.mutex.Unlock()
+    z.mutex.Lock()
+    defer z.mutex.Unlock()
 
-    if len(w.soundqueue) >= 32 {
+    if len(z.soundqueue) >= 32 {
         return
     }
 
@@ -60,40 +78,36 @@ func (w *Canvas) PlaySound(filename string) {
         return
     }
     varname := sound.varname
-    w.soundqueue = append(w.soundqueue, varname)
+    z.soundqueue = append(z.soundqueue, varname)
 }
 
 func (w *Canvas) SendToAll() {
 
-    w.mutex.Lock()
-
-    var havesounds bool
-
-    if len(w.soundqueue) > 1 {                      // The queue now contains the header as 1st item
-        havesounds = true
-    }
-
-    visual_message := []byte(strings.Join(w.entities, " "))
-    sound_message := []byte(strings.Join(w.soundqueue, " "))
-
-    w.mutex.Unlock()
-
-    // Send both...
+    visual_message := w.Bytes()
 
     eng.mutex.Lock()
+    defer eng.mutex.Unlock()
 
     for _, player := range eng.players {
-
-        if havesounds {
-            player.conn.WriteMessage(websocket.TextMessage, sound_message)
-        }
-
         player.conn.WriteMessage(websocket.TextMessage, visual_message)
     }
+}
 
-    eng.mutex.Unlock()
+func (z *Soundscape) SendToAll() {
 
-    if havesounds {
-        w.ClearSounds()
+    z.mutex.Lock()
+    queue_length := len(z.soundqueue)
+    z.mutex.Unlock()
+
+    if queue_length < 2 {
+        return
     }
+
+    sound_message := z.Bytes()  // Although the queue length may have changed (race condition), that's harmless enough.
+
+    eng.mutex.Lock()
+    for _, player := range eng.players {
+        player.conn.WriteMessage(websocket.TextMessage, sound_message)
+    }
+    eng.mutex.Unlock()
 }
