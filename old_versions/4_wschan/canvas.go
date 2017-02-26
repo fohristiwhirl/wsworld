@@ -14,8 +14,6 @@ import (
     "fmt"
     "strings"
     "sync"
-
-    "github.com/gorilla/websocket"
 )
 
 var next_entity_id int
@@ -151,26 +149,19 @@ func (w *Canvas) SendToAll() {
 
     w.mutex.Unlock()
 
-    visual_message := []byte(strings.Join(visual_slice, " "))
+    visual_message := strings.Join(visual_slice, " ")
 
     // Now do sounds, which are easy to assemble...
 
-    sound_message := []byte("a " + strings.Join(w.soundqueue, " "))      // Header: "a" for "audio"
+    sound_message := "a " + strings.Join(w.soundqueue, " ")      // Header: "a" for "audio"
 
     // Send both...
 
-    eng.mutex.Lock()
-
-    for _, player := range eng.players {
-
-        if len(w.soundqueue) > 0 {
-            player.conn.WriteMessage(websocket.TextMessage, sound_message)
-        }
-
-        player.conn.WriteMessage(websocket.TextMessage, visual_message)
+    if len(w.soundqueue) > 0 {
+        universal_message_chan <- sound_message
     }
 
-    eng.mutex.Unlock()
+    universal_message_chan <- visual_message
 
     w.mutex.Lock()
     w.soundqueue = nil

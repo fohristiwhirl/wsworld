@@ -16,7 +16,6 @@ var eng engine
 func init() {
     eng.sprites = make(map[string]*sprite)
     eng.sounds = make(map[string]*sound)
-    eng.players = make(map[int]*player)
 }
 
 type engine struct {
@@ -36,11 +35,6 @@ type engine struct {
 
     sprites         map[string]*sprite      // filename -> sprite
     sounds          map[string]*sound       // filename -> sound
-
-    // Written often...
-
-    players         map[int]*player
-    latest_player   int
 }
 
 type sprite struct {
@@ -51,12 +45,6 @@ type sprite struct {
 type sound struct {
     filename        string
     varname         string
-}
-
-type player struct {
-    pid             int
-    keyboard        map[string]bool
-    conn            *websocket.Conn
 }
 
 func RegisterSprite(filename string) {
@@ -114,41 +102,7 @@ func Start(title, server, normal_path, res_path_local string, width, height int,
     eng.static = static_webpage(eng.title, server, VIRTUAL_WS_DIR, VIRTUAL_RESOURCE_DIR, eng.sprites, eng.sounds, width, height)
 
     go http_startup(server, normal_path, VIRTUAL_WS_DIR, VIRTUAL_RESOURCE_DIR, res_path_local)
-}
-
-func KeyDown(pid int, key string) bool {
-
-    eng.mutex.Lock()
-    defer eng.mutex.Unlock()
-
-    if pid == -1 {
-        pid = eng.latest_player
-    }
-
-    if eng.players[pid] == nil {
-        return false
-    }
-
-    return eng.players[pid].keyboard[key]
-}
-
-func PlayerCount() int {
-    eng.mutex.Lock()
-    defer eng.mutex.Unlock()
-    return len(eng.players)
-}
-
-func PlayerSet() map[int]bool {
-    eng.mutex.Lock()
-    defer eng.mutex.Unlock()
-
-    set := make(map[int]bool)
-
-    for key, _ := range eng.players {
-        set[key] = true
-    }
-
-    return set
+    go connection_hub()
 }
 
 func http_startup(server, normal_path, ws_path, res_path_server, res_path_local string) {

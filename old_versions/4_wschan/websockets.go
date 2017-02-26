@@ -31,34 +31,34 @@ func ws_handler(writer http.ResponseWriter, request * http.Request) {
         return
     }
 
+    my_outgoing_msg_chan := make(chan string, 16)
     pid := new_player_id()
 
-    eng.mutex.Lock()
+    new_player_chan <- new_player{pid, my_outgoing_msg_chan}
 
-    if eng.multiplayer == false {
-        delete(eng.players, eng.latest_player)
+    go incoming_msg_handler(pid, conn, request.RemoteAddr)
+
+    for {
+        m := <- my_outgoing_msg_chan
+        err := conn.WriteMessage(websocket.TextMessage, []byte(m))
+
+        if err != nil {
+            conn.Close()
+            remove_player_chan <- pid
+            return
+        }
     }
+}
 
-    keyboard := make(map[string]bool)
-    eng.players[pid] = &player{pid, keyboard, conn}
-    eng.latest_player = pid
-
-    eng.mutex.Unlock()
-
-    // Handle incoming messages until connection fails...
+func incoming_msg_handler(pid int, conn *websocket.Conn, remote_address string) {
 
     for {
         _, reader, err := conn.NextReader()
 
         if err != nil {
-
             conn.Close()
-            fmt.Printf("Connection CLOSED: %s (%v)\n", request.RemoteAddr, err)
-
-            eng.mutex.Lock()
-            delete(eng.players, pid)
-            eng.mutex.Unlock()
-
+            fmt.Printf("Connection CLOSED: %s (%v)\n", remote_address, err)
+            remove_player_chan <- pid
             return
         }
 
@@ -70,19 +70,15 @@ func ws_handler(writer http.ResponseWriter, request * http.Request) {
 
         case "keyup":
 
-            eng.mutex.Lock()
-            if eng.players[pid] != nil {
-                eng.players[pid].keyboard[fields[1]] = false
+            if len(fields) > 1 {
+                key_input_chan <- key_input{pid, fields[1], false}
             }
-            eng.mutex.Unlock()
 
         case "keydown":
 
-            eng.mutex.Lock()
-            if eng.players[pid] != nil {
-                eng.players[pid].keyboard[fields[1]] = true
+            if len(fields) > 1 {
+                key_input_chan <- key_input{pid, fields[1], true}
             }
-            eng.mutex.Unlock()
         }
     }
 }
