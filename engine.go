@@ -2,6 +2,7 @@ package wsworld
 
 import (
     "fmt"
+    "html/template"
     "net/http"
     "path/filepath"
     "strings"
@@ -141,7 +142,8 @@ func PlayerSet() map[int]bool {
 }
 
 func SendDebugToAll(msg string) {
-    b := []byte("d " + msg)
+
+    b := []byte(template.HTMLEscapeString("d " + msg))
 
     eng.mutex.Lock()
     for _, player := range eng.players {
