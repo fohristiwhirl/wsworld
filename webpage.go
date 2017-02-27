@@ -94,8 +94,10 @@ function WsWorldClient() {
         that.init_sound();
 
         that.ws = new WebSocket("ws://{{.Server}}{{.WsPath}}");
+        that.ws_ready = false
 
         that.ws.onopen = function (evt) {
+            that.ws_ready = true
             requestAnimationFrame(that.animate);
         };
 
@@ -157,18 +159,22 @@ function WsWorldClient() {
         // Setup keyboard...
 
         document.addEventListener("keydown", function (evt) {
-            if (evt.key === " ") {
-                that.ws.send("keydown space");
-            } else {
-                that.ws.send("keydown " + evt.key);
+            if (that.ws_ready) {
+                if (evt.key === " ") {
+                    that.ws.send("keydown space");
+                } else {
+                    that.ws.send("keydown " + evt.key);
+                }
             }
         });
 
         document.addEventListener("keyup", function (evt) {
-            if (evt.key === " ") {
-                that.ws.send("keyup space");
-            } else {
-                that.ws.send("keyup " + evt.key);
+            if (that.ws_ready) {
+                if (evt.key === " ") {
+                    that.ws.send("keyup space");
+                } else {
+                    that.ws.send("keyup " + evt.key);
+                }
             }
         });
     };
