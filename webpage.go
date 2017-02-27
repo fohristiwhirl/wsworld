@@ -90,12 +90,8 @@ function WsWorldClient() {
         that.second_last_frame_time = Date.now() - 16;
         that.last_frame_time = Date.now();
         that.all_things = [];
-        that.audiochannels = [];
 
-        var a;
-        for (a = 0; a < channel_max; a += 1) {
-            that.audiochannels[a] = {channel: new Audio(), finished: -1};
-        }
+        that.init_sound();
 
         that.ws = new WebSocket("ws://{{.Server}}{{.WsPath}}");
 
@@ -300,6 +296,13 @@ function WsWorldClient() {
     };
 
     // Sound from Thomas Sturm: http://www.storiesinflight.com/html5/audio.html
+
+    that.init_sound = function () {
+        that.audiochannels = []
+        while (that.audiochannels.length < channel_max) {
+            that.audiochannels.push({channel: new Audio(), finished: -1})
+        }
+    };
 
     that.play_multi_sound = function (s) {
         var a;
