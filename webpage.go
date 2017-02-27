@@ -71,9 +71,6 @@ Total draws: <span id="total_draws">0</span>
 
 {{.ImageLoaders}}
 
-document.querySelector("canvas").width = {{.Width}};
-document.querySelector("canvas").height = {{.Height}};
-
 function WsWorldClient() {
 
     var that = this;
@@ -84,6 +81,9 @@ function WsWorldClient() {
     var virtue = document.querySelector("canvas").getContext("2d");
 
     that.init = function() {
+
+        document.querySelector("canvas").width = {{.Width}};
+        document.querySelector("canvas").height = {{.Height}};
 
         that.ws_frames = 0;
         that.total_draws = 0;
