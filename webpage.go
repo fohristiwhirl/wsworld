@@ -113,13 +113,13 @@ function WsWorldClient() {
 
                 // Deal with visual frames.................................................................
 
-                that.all_things.length = 0;
+                that.all_things.length = 0;         // Clear our list of drawables.
+
                 that.ws_frames += 1;
                 that.second_last_frame_time = that.last_frame_time;
                 that.last_frame_time = Date.now();
 
-                // Cache the functions to cut down on indirection (I think).
-                // Might offer a speedup? Who knows...
+                // Cache the functions to cut down on indirection. Might offer a speedup? Who knows.
 
                 var parse_point_or_sprite = that.parse_point_or_sprite;
                 var parse_line = that.parse_line;
@@ -247,25 +247,24 @@ function WsWorldClient() {
 
     that.draw = function () {
 
+        virtue.clearRect(0, 0, WIDTH, HEIGHT);     // The best way to clear the canvas??
+
         // As a relatively simple way of dealing with arbitrary timings of incoming data, we
         // always try to draw the object "where it is now" taking into account how long it's
         // been since we received info about it. This is done with this "time_offset" var.
 
         var time_offset = Date.now() - that.last_frame_time;
 
-        virtue.clearRect(0, 0, WIDTH, HEIGHT);     // The best way to clear the canvas??
+        // Cache various things for speed reasons...
 
         var all_things = that.all_things;
         var len = all_things.length;
-        var n;
-
-        // Cache the functions to cut down on indirection (I think).
-        // Might offer a speedup? Who knows...
 
         var draw_point = that.draw_point;
         var draw_sprite = that.draw_sprite;
         var draw_line = that.draw_line;
 
+        var n;
         for (n = 0; n < len; n += 1) {
 
             switch (all_things[n].type) {
