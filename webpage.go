@@ -71,113 +71,108 @@ Total draws: <span id="total_draws">0</span>
 
 {{.ImageLoaders}}
 
-function WsWorldClient() {
+function wsworld_client() {
 
-    var that = this;
+    var that = {};
 
     var WIDTH = {{.Width}};
     var HEIGHT = {{.Height}};
     var channel_max = 8;
     var virtue = document.querySelector("canvas").getContext("2d");
 
-    that.startup = function () {
+    document.querySelector("canvas").width = {{.Width}};
+    document.querySelector("canvas").height = {{.Height}};
 
-        document.querySelector("canvas").width = {{.Width}};
-        document.querySelector("canvas").height = {{.Height}};
+    that.ws_frames = 0;
+    that.total_draws = 0;
+    that.second_last_frame_time = Date.now() - 16;
+    that.last_frame_time = Date.now();
+    that.all_things = [];
 
-        that.ws_frames = 0;
-        that.total_draws = 0;
-        that.second_last_frame_time = Date.now() - 16;
-        that.last_frame_time = Date.now();
-        that.all_things = [];
+    that.ws = new WebSocket("ws://{{.Server}}{{.WsPath}}");
+    that.ws_ready = false
 
-        that.init_sound();
-
-        that.ws = new WebSocket("ws://{{.Server}}{{.WsPath}}");
-        that.ws_ready = false
-
-        that.ws.onopen = function () {
-            that.ws_ready = true
-            requestAnimationFrame(that.animate);
-        };
-
-        that.ws.onmessage = function (evt) {
-
-            var stuff = evt.data.split(" ");
-            var frame_type = stuff[0];
-
-            var n;
-            var len = stuff.length;
-
-            if (frame_type === "v") {
-
-                // Deal with visual frames.................................................................
-
-                that.all_things.length = 0;         // Clear our list of drawables.
-
-                that.ws_frames += 1;
-                that.second_last_frame_time = that.last_frame_time;
-                that.last_frame_time = Date.now();
-
-                // Cache the functions to cut down on indirection. Might offer a speedup? Who knows.
-
-                var parse_point_or_sprite = that.parse_point_or_sprite;
-                var parse_line = that.parse_line;
-
-                for (n = 1; n < len; n += 1) {
-
-                    switch (stuff[n].charAt(0)) {
-
-                    case "p":
-                    case "s":
-                        parse_point_or_sprite(stuff[n]);
-                        break;
-                    case "l":
-                        parse_line(stuff[n]);
-                        break;
-                    }
-                }
-
-            } else if (frame_type === "a") {
-
-                // Deal with audio events..................................................................
-
-                for (n = 1; n < len; n += 1) {
-                    that.play_multi_sound(stuff[n]);
-                }
-
-            } else if (frame_type === "d") {
-
-                // Debug messages..........................................................................
-
-                if (evt.data.length > 2) {
-                    that.display_debug_message(evt.data.slice(2));
-                }
-            }
-        };
-
-        // Setup keyboard...
-
-        document.addEventListener("keydown", function (evt) {
-            if (that.ws_ready) {
-                if (evt.key === " ") {
-                    that.ws.send("keydown space");
-                } else {
-                    that.ws.send("keydown " + evt.key);
-                }
-            }
-        });
-
-        document.addEventListener("keyup", function (evt) {
-            if (that.ws_ready) {
-                if (evt.key === " ") {
-                    that.ws.send("keyup space");
-                } else {
-                    that.ws.send("keyup " + evt.key);
-                }
-            }
-        });
+    that.ws.onopen = function () {
+        that.ws_ready = true
+        requestAnimationFrame(that.animate);
     };
+
+    that.ws.onmessage = function (evt) {
+
+        var stuff = evt.data.split(" ");
+        var frame_type = stuff[0];
+
+        var n;
+        var len = stuff.length;
+
+        if (frame_type === "v") {
+
+            // Deal with visual frames.................................................................
+
+            that.all_things.length = 0;         // Clear our list of drawables.
+
+            that.ws_frames += 1;
+            that.second_last_frame_time = that.last_frame_time;
+            that.last_frame_time = Date.now();
+
+            // Cache the functions to cut down on indirection. Might offer a speedup? Who knows.
+
+            var parse_point_or_sprite = that.parse_point_or_sprite;
+            var parse_line = that.parse_line;
+
+            for (n = 1; n < len; n += 1) {
+
+                switch (stuff[n].charAt(0)) {
+
+                case "p":
+                case "s":
+                    parse_point_or_sprite(stuff[n]);
+                    break;
+                case "l":
+                    parse_line(stuff[n]);
+                    break;
+                }
+            }
+
+        } else if (frame_type === "a") {
+
+            // Deal with audio events..................................................................
+
+            for (n = 1; n < len; n += 1) {
+                that.play_multi_sound(stuff[n]);
+            }
+
+        } else if (frame_type === "d") {
+
+            // Debug messages..........................................................................
+
+            if (evt.data.length > 2) {
+                that.display_debug_message(evt.data.slice(2));
+            }
+        }
+    };
+
+    // Setup keyboard...
+
+    document.addEventListener("keydown", function (evt) {
+        if (that.ws_ready) {
+            if (evt.key === " ") {
+                that.ws.send("keydown space");
+            } else {
+                that.ws.send("keydown " + evt.key);
+            }
+        }
+    });
+
+    document.addEventListener("keyup", function (evt) {
+        if (that.ws_ready) {
+            if (evt.key === " ") {
+                that.ws.send("keyup space");
+            } else {
+                that.ws.send("keyup " + evt.key);
+            }
+        }
+    });
 
     that.parse_point_or_sprite = function (blob) {
 
@@ -324,10 +319,12 @@ function WsWorldClient() {
             }
         }
     };
+
+    that.init_sound();
+    return that;
 }
 
-var client = new WsWorldClient();
-client.startup();
+wsworld_client()
 
 </script>
 
