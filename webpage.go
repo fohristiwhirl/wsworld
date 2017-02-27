@@ -71,7 +71,7 @@ Total draws: <span id="total_draws">0</span>
 
 {{.ImageLoaders}}
 
-function wsworld_client() {
+function start_wsworld_client() {
 
     var that = {};
 
@@ -324,7 +324,7 @@ function wsworld_client() {
     return that;
 }
 
-wsworld_client();
+start_wsworld_client();
 
 </script>
 
