@@ -83,12 +83,99 @@ function WsWorldClient() {
     var channel_max = 8;
     var virtue = document.querySelector("canvas").getContext("2d");
 
-    that.ws_frames = 0;
-    that.total_draws = 0;
-    that.second_last_frame_time = Date.now() - 16;
-    that.last_frame_time = Date.now();
-    that.all_things = [];
-    that.audiochannels = [];
+    that.init = function() {
+
+        that.ws_frames = 0;
+        that.total_draws = 0;
+        that.second_last_frame_time = Date.now() - 16;
+        that.last_frame_time = Date.now();
+        that.all_things = [];
+        that.audiochannels = [];
+
+        var a;
+        for (a = 0; a < channel_max; a += 1) {
+            that.audiochannels[a] = {channel: new Audio(), finished: -1};
+        }
+
+        that.ws = new WebSocket("ws://{{.Server}}{{.WsPath}}");
+
+        that.ws.onopen = function (evt) {
+            requestAnimationFrame(that.animate);
+        };
+
+        that.ws.onmessage = function (evt) {
+
+            var stuff = evt.data.split(" ");
+            var frame_type = stuff[0];
+
+            var n;
+            var len = stuff.length;
+
+            if (frame_type === "v") {
+
+                // Deal with visual frames.................................................................
+
+                that.all_things.length = 0;
+                that.ws_frames += 1;
+                that.second_last_frame_time = that.last_frame_time;
+                that.last_frame_time = Date.now();
+
+                // Cache the functions to cut down on indirection (I think).
+                // Might offer a speedup? Who knows...
+
+                var parse_point_or_sprite = that.parse_point_or_sprite;
+                var parse_line = that.parse_line;
+
+                for (n = 1; n < len; n += 1) {
+
+                    switch (stuff[n].charAt(0)) {
+
+                    case "p":
+                    case "s":
+                        parse_point_or_sprite(stuff[n]);
+                        break;
+                    case "l":
+                        parse_line(stuff[n]);
+                        break;
+                    }
+                }
+
+            } else if (frame_type === "a") {
+
+                // Deal with audio events..................................................................
+
+                for (n = 1; n < len; n += 1) {
+                    that.play_multi_sound(stuff[n]);
+                }
+
+            } else if (frame_type === "d") {
+
+                // Debug messages..........................................................................
+
+                if (evt.data.length > 2) {
+                    that.display_debug_message(evt.data.slice(2));
+                }
+            }
+        };
+
+        // Setup keyboard...
+
+        document.addEventListener("keydown", function (evt) {
+            if (evt.key === " ") {
+                that.ws.send("keydown space");
+            } else {
+                that.ws.send("keydown " + evt.key);
+            }
+        });
+
+        document.addEventListener("keyup", function (evt) {
+            if (evt.key === " ") {
+                that.ws.send("keyup space");
+            } else {
+                that.ws.send("keyup " + evt.key);
+            }
+        });
+    };
 
     that.parse_point_or_sprite = function (blob) {
 
@@ -214,13 +301,6 @@ function WsWorldClient() {
 
     // Sound from Thomas Sturm: http://www.storiesinflight.com/html5/audio.html
 
-    that.init_sound = function () {
-        var a;
-        for (a = 0; a < channel_max; a += 1) {
-            that.audiochannels[a] = {channel: new Audio(), finished: -1};
-        }
-    };
-
     that.play_multi_sound = function (s) {
         var a;
         var thistime;
@@ -236,92 +316,10 @@ function WsWorldClient() {
             }
         }
     };
-
-    that.init_sound();
-
-    // Setup websocket...
-
-    that.ws = new WebSocket("ws://{{.Server}}{{.WsPath}}");
-
-    that.ws.onopen = function (evt) {
-        requestAnimationFrame(that.animate);
-    };
-
-    that.ws.onmessage = function (evt) {
-
-        var stuff = evt.data.split(" ");
-        var frame_type = stuff[0];
-
-        var n;
-        var len = stuff.length;
-
-        if (frame_type === "v") {
-
-            // Deal with visual frames.................................................................
-
-            that.all_things.length = 0;
-            that.ws_frames += 1;
-            that.second_last_frame_time = that.last_frame_time;
-            that.last_frame_time = Date.now();
-
-            // Cache the functions to cut down on indirection (I think).
-            // Might offer a speedup? Who knows...
-
-            var parse_point_or_sprite = that.parse_point_or_sprite;
-            var parse_line = that.parse_line;
-
-            for (n = 1; n < len; n += 1) {
-
-                switch (stuff[n].charAt(0)) {
-
-                case "p":
-                case "s":
-                    parse_point_or_sprite(stuff[n]);
-                    break;
-                case "l":
-                    parse_line(stuff[n]);
-                    break;
-                }
-            }
-
-        } else if (frame_type === "a") {
-
-            // Deal with audio events..................................................................
-
-            for (n = 1; n < len; n += 1) {
-                that.play_multi_sound(stuff[n]);
-            }
-
-        } else if (frame_type === "d") {
-
-            // Debug messages..........................................................................
-
-            if (evt.data.length > 2) {
-                that.display_debug_message(evt.data.slice(2));
-            }
-        }
-    };
-
-    // Setup keyboard...
-
-    document.addEventListener("keydown", function (evt) {
-        if (evt.key === " ") {
-            that.ws.send("keydown space");
-        } else {
-            that.ws.send("keydown " + evt.key);
-        }
-    });
-
-    document.addEventListener("keyup", function (evt) {
-        if (evt.key === " ") {
-            that.ws.send("keyup space");
-        } else {
-            that.ws.send("keyup " + evt.key);
-        }
-    });
 }
 
-new WsWorldClient();
+var client = new WsWorldClient();
+client.init();
 
 </script>
 
