@@ -150,9 +150,9 @@ function parse_point_or_sprite(blob) {
 
     thing.type = elements[0]
 
-    if (thing.type == "p") {
+    if (thing.type === "p") {
         thing.colour = elements[1]
-    } else if (thing.type == "s") {
+    } else if (thing.type === "s") {
         thing.varname = elements[1]
     }
 
