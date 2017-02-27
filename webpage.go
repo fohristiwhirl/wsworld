@@ -173,9 +173,9 @@ function WsWorldClient() {
         // Cache the functions to cut down on indirection (I think).
         // Might offer a speedup? Who knows...
 
-        var draw_point = that.draw_point
-        var draw_sprite = that.draw_sprite
-        var draw_line = that.draw_line
+        var draw_point = that.draw_point;
+        var draw_sprite = that.draw_sprite;
+        var draw_line = that.draw_line;
 
         for (n = 0; n < len; n += 1) {
 
@@ -267,8 +267,8 @@ function WsWorldClient() {
             // Cache the functions to cut down on indirection (I think).
             // Might offer a speedup? Who knows...
 
-            var parse_point_or_sprite = that.parse_point_or_sprite
-            var parse_line = that.parse_line
+            var parse_point_or_sprite = that.parse_point_or_sprite;
+            var parse_line = that.parse_line;
 
             for (n = 1; n < len; n += 1) {
 
