@@ -80,7 +80,7 @@ function WsWorldClient() {
     var channel_max = 8;
     var virtue = document.querySelector("canvas").getContext("2d");
 
-    that.init = function() {
+    that.init = function () {
 
         document.querySelector("canvas").width = {{.Width}};
         document.querySelector("canvas").height = {{.Height}};
