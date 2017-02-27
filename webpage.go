@@ -90,10 +90,10 @@ function wsworld_client() {
     that.all_things = [];
 
     that.ws = new WebSocket("ws://{{.Server}}{{.WsPath}}");
-    that.ws_ready = false
+    that.ws_ready = false;
 
     that.ws.onopen = function () {
-        that.ws_ready = true
+        that.ws_ready = true;
         requestAnimationFrame(that.animate);
     };
 
@@ -298,9 +298,9 @@ function wsworld_client() {
     // Sound from Thomas Sturm: http://www.storiesinflight.com/html5/audio.html
 
     that.init_sound = function () {
-        that.audiochannels = []
+        that.audiochannels = [];
         while (that.audiochannels.length < channel_max) {
-            that.audiochannels.push({channel: new Audio(), finished: -1})
+            that.audiochannels.push({channel: new Audio(), finished: -1});
         }
     };
 
@@ -324,7 +324,7 @@ function wsworld_client() {
     return that;
 }
 
-wsworld_client()
+wsworld_client();
 
 </script>
 
