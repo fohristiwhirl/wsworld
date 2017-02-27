@@ -96,7 +96,7 @@ function WsWorldClient() {
         that.ws = new WebSocket("ws://{{.Server}}{{.WsPath}}");
         that.ws_ready = false
 
-        that.ws.onopen = function (evt) {
+        that.ws.onopen = function () {
             that.ws_ready = true
             requestAnimationFrame(that.animate);
         };
