@@ -4,6 +4,7 @@ import (
     "fmt"
     "io/ioutil"
     "net/http"
+    "strconv"
     "strings"
     "sync"
 
@@ -46,7 +47,7 @@ func ws_handler(writer http.ResponseWriter, request * http.Request) {
     }
 
     keyboard := make(map[string]bool)
-    eng.players[pid] = &player{pid, keyboard, conn}
+    eng.players[pid] = &player{pid, keyboard, nil, conn}
     eng.latest_player = pid
 
     eng.mutex.Unlock()
@@ -90,6 +91,20 @@ func ws_handler(writer http.ResponseWriter, request * http.Request) {
                 eng.mutex.Lock()
                 if eng.players[pid] != nil {
                     eng.players[pid].keyboard[fields[1]] = true
+                }
+                eng.mutex.Unlock()
+            }
+
+        case "click":
+
+            if len(fields) > 2 {
+
+                x, _ := strconv.Atoi(fields[1])
+                y, _ := strconv.Atoi(fields[2])
+
+                eng.mutex.Lock()
+                if eng.players[pid] != nil {
+                    eng.players[pid].clicks = append(eng.players[pid].clicks, []int{x, y})
                 }
                 eng.mutex.Unlock()
             }

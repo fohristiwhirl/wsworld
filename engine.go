@@ -49,6 +49,7 @@ type engine struct {
 type player struct {
     pid             int
     keyboard        map[string]bool
+    clicks          [][]int
     conn            *websocket.Conn
 }
 
@@ -117,6 +118,31 @@ func KeyDown(pid int, key string) bool {
     }
 
     return eng.players[pid].keyboard[key]
+}
+
+func PollClicks(pid int) [][]int {
+
+    eng.mutex.Lock()
+    defer eng.mutex.Unlock()
+
+    if pid == -1 {
+        pid = eng.latest_player
+    }
+
+    var ret [][]int
+
+    if eng.players[pid] == nil {
+        return ret
+    }
+
+    for n := 0 ; n < len(eng.players[pid].clicks) ; n++ {
+        p := []int{eng.players[pid].clicks[n][0], eng.players[pid].clicks[n][1]}
+        ret = append(ret, p)
+    }
+
+    eng.players[pid].clicks = nil
+
+    return ret
 }
 
 func PlayerCount() int {

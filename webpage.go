@@ -78,7 +78,8 @@ function start_wsworld_client() {
     var WIDTH = {{.Width}};
     var HEIGHT = {{.Height}};
     var channel_max = 8;
-    var virtue = document.querySelector("canvas").getContext("2d");
+    var canvas = document.querySelector("canvas");
+    var virtue = canvas.getContext("2d");
 
     document.querySelector("canvas").width = {{.Width}};
     document.querySelector("canvas").height = {{.Height}};
@@ -152,7 +153,7 @@ function start_wsworld_client() {
         }
     };
 
-    // Setup keyboard...
+    // Setup keyboard and mouse...
 
     document.addEventListener("keydown", function (evt) {
         if (that.ws_ready) {
@@ -172,6 +173,21 @@ function start_wsworld_client() {
                 that.ws.send("keyup " + evt.key);
             }
         }
+    });
+
+    canvas.addEventListener("mousedown", function (evt) {
+        var x;
+        var y;
+        if (evt.x !== undefined && event.y !== undefined) {
+            x = evt.x;
+            y = evt.y;
+        } else {                    // Firefox...
+            x = evt.clientX;
+            y = evt.clientY;
+        }
+        x -= canvas.offsetLeft;
+        y -= canvas.offsetTop;
+        that.ws.send("click " + x.toString() + " " + y.toString());
     });
 
     that.parse_point_or_sprite = function (blob) {
