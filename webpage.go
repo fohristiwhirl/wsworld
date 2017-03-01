@@ -1,5 +1,22 @@
 package wsworld
 
+/*
+
+   Summary of the comms protocol:
+   Each message has a 1 char type indicator, followed by the blobs of the message.
+   The type indicator and the blobs are separated from each other by 0x1e (30).
+   The fields inside a blob are separated by 0x1f (31).
+
+   v (30) p (31) #ffffff (31) 25.2 (31) 54.7 (31) 2.2 (31) 1.3 (30) p (31) #ff0000 (31) 127.4 (31) 339.7 (31) -1.0 (31) 0.4
+   |   |                                                         |
+   |   |  ---------------------- blob ------------------------   |  ------------------------- blob ------------------------
+   |   |                                                         |
+   | recsep                                                    recsep
+   |
+  type
+
+*/
+
 import (
     "bytes"
     "fmt"
@@ -100,7 +117,7 @@ function start_wsworld_client() {
 
     that.ws.onmessage = function (evt) {
 
-        var stuff = evt.data.split(String.fromCharCode(31));    // Our fields are split by ASCII 31 (unit sep)
+        var stuff = evt.data.split(String.fromCharCode(30));    // Our fields are split by ASCII 30 (record sep)
         var frame_type = stuff[0];
 
         var n;
@@ -189,7 +206,7 @@ function start_wsworld_client() {
 
     that.parse_point_or_sprite = function (blob) {
 
-        var elements = blob.split(":");
+        var elements = blob.split(String.fromCharCode(31));
 
         var thing = {};
 
@@ -211,7 +228,7 @@ function start_wsworld_client() {
 
     that.parse_line = function (blob) {
 
-        var elements = blob.split(":");
+        var elements = blob.split(String.fromCharCode(31));
 
         var thing = {};
 
@@ -229,7 +246,7 @@ function start_wsworld_client() {
 
     that.parse_text = function (blob) {
 
-        var elements = blob.split(":");
+        var elements = blob.split(String.fromCharCode(31));
 
         if (elements.length < 9) {
             return;
@@ -245,7 +262,7 @@ function start_wsworld_client() {
         thing.y = parseFloat(elements[5]);
         thing.speedx = parseFloat(elements[6]);
         thing.speedy = parseFloat(elements[7]);
-        thing.text = elements.slice(8).join(":");       // Colons are our blob separator so the text may have been split. Rejoin.
+        thing.text = elements[8];
 
         that.all_things.push(thing);
     };

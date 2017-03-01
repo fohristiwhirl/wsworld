@@ -38,7 +38,7 @@ func (w *Canvas) Bytes() []byte {
         w.entities = append([]string{"v"}, w.entities...)
     }
 
-    return []byte(strings.Join(w.entities, "\x1f"))
+    return []byte(strings.Join(w.entities, "\x1e"))
 }
 
 
@@ -71,34 +71,35 @@ func (z *Soundscape) Bytes() []byte {
         z.soundqueue = append([]string{"a"}, z.soundqueue...)
     }
 
-    return []byte(strings.Join(z.soundqueue, "\x1f"))
+    return []byte(strings.Join(z.soundqueue, "\x1e"))
 }
 
 
 func (w *Canvas) AddPoint(colour string, x, y, speedx, speedy float64) {
     w.mutex.Lock()
     defer w.mutex.Unlock()
-    w.entities = append(w.entities, fmt.Sprintf("p:%s:%.1f:%.1f:%.1f:%.1f", colour, x, y, speedx * eng.fps, speedy * eng.fps))
+    w.entities = append(w.entities, fmt.Sprintf("p\x1f%s\x1f%.1f\x1f%.1f\x1f%.1f\x1f%.1f", colour, x, y, speedx * eng.fps, speedy * eng.fps))
 }
 
 func (w *Canvas) AddSprite(filename string, x, y, speedx, speedy float64) {
     w.mutex.Lock()
     defer w.mutex.Unlock()
     varname := eng.sprites[filename]        // Safe to read without mutex since there are no writes any more
-    w.entities = append(w.entities, fmt.Sprintf("s:%s:%.1f:%.1f:%.1f:%.1f", varname, x, y, speedx * eng.fps, speedy * eng.fps))
+    w.entities = append(w.entities, fmt.Sprintf("s\x1f%s\x1f%.1f\x1f%.1f\x1f%.1f\x1f%.1f", varname, x, y, speedx * eng.fps, speedy * eng.fps))
 }
 
 func (w *Canvas) AddLine(colour string, x1, y1, x2, y2, speedx, speedy float64) {
     w.mutex.Lock()
     defer w.mutex.Unlock()
-    w.entities = append(w.entities, fmt.Sprintf("l:%s:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f", colour, x1, y1, x2, y2, speedx * eng.fps, speedy * eng.fps))
+    w.entities = append(w.entities, fmt.Sprintf("l\x1f%s\x1f%.1f\x1f%.1f\x1f%.1f\x1f%.1f\x1f%.1f\x1f%.1f", colour, x1, y1, x2, y2, speedx * eng.fps, speedy * eng.fps))
 }
 
 func (w *Canvas) AddText(text, colour string, size int, font string, x, y, speedx, speedy float64) {
     w.mutex.Lock()
     defer w.mutex.Unlock()
-    text = strings.Replace(text, "\x1f", " ", -1)        // Because ASCII 0x1F (31, unit sep) is meaningful in our comms protocol.
-    w.entities = append(w.entities, fmt.Sprintf("t:%s:%d:%s:%.1f:%.1f:%.1f:%.1f:%s", colour, size, font, x, y, speedx, speedy, text))
+    text = strings.Replace(text, "\x1e", " ", -1)       // Replace meaningful characters in our protocol
+    text = strings.Replace(text, "\x1f", " ", -1)
+    w.entities = append(w.entities, fmt.Sprintf("t\x1f%s\x1f%d\x1f%s\x1f%.1f\x1f%.1f\x1f%.1f\x1f%.1f\x1f%s", colour, size, font, x, y, speedx, speedy, text))
 }
 
 func (z *Soundscape) PlaySound(filename string) {
@@ -131,15 +132,11 @@ func (w *Canvas) SendToAll() {
 
 func (z *Soundscape) SendToAll() {
 
-    z.mutex.Lock()
-    queue_length := len(z.soundqueue)
-    z.mutex.Unlock()
+    sound_message := z.Bytes()  // Method has its own mutex call.
 
-    if queue_length < 2 {
-        return
+    if len(sound_message) < 2 {
+        return;
     }
-
-    sound_message := z.Bytes()  // Although the queue length may have changed (race condition), that's harmless enough.
 
     eng.mutex.Lock()
     for _, player := range eng.players {

@@ -185,7 +185,10 @@ func PlayerSet() map[int]bool {
 
 func SendDebugToAll(msg string) {
 
-    b := []byte("d\x1f" + template.HTMLEscapeString(msg))
+    msg = strings.Replace(msg, "\x1e", " ", -1)       // Replace meaningful characters in our protocol
+    msg = strings.Replace(msg, "\x1f", " ", -1)
+
+    b := []byte("d\x1e" + template.HTMLEscapeString(msg))
 
     eng.mutex.Lock()
     for _, player := range eng.players {
