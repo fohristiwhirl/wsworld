@@ -105,7 +105,14 @@ func Start(title, server, normal_path, res_path_local string, width, height int,
 }
 
 func KeyDown(pid int, key string) bool {
+    return _keydown(pid, key, false)
+}
 
+func KeyDownClear(pid int, key string) bool {       // Clears the key after (sets it to false)
+    return _keydown(pid, key, true)
+}
+
+func _keydown(pid int, key string, clear bool) bool {
     eng.mutex.Lock()
     defer eng.mutex.Unlock()
 
@@ -117,7 +124,13 @@ func KeyDown(pid int, key string) bool {
         return false
     }
 
-    return eng.players[pid].keyboard[key]
+    ret := eng.players[pid].keyboard[key]
+
+    if clear {
+        eng.players[pid].keyboard[key] = false
+    }
+
+    return ret
 }
 
 func PollClicks(pid int) [][]int {
