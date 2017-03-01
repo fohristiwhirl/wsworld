@@ -178,15 +178,8 @@ function start_wsworld_client() {
     canvas.addEventListener("mousedown", function (evt) {
         var x;
         var y;
-        if (evt.x !== undefined && event.y !== undefined) {
-            x = evt.x;
-            y = evt.y;
-        } else {                    // Firefox...
-            x = evt.clientX;
-            y = evt.clientY;
-        }
-        x -= canvas.offsetLeft;
-        y -= canvas.offsetTop;
+        x = evt.clientX - canvas.offsetLeft;
+        y = evt.clientY - canvas.offsetTop;
         that.ws.send("click " + x.toString() + " " + y.toString());
     });
 
