@@ -172,7 +172,7 @@ func PlayerSet() map[int]bool {
 
 func SendDebugToAll(msg string) {
 
-    b := []byte(template.HTMLEscapeString("d " + msg))
+    b := []byte("d\x1f" + template.HTMLEscapeString(msg))
 
     eng.mutex.Lock()
     for _, player := range eng.players {

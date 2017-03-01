@@ -38,7 +38,7 @@ func (w *Canvas) Bytes() []byte {
         w.entities = append([]string{"v"}, w.entities...)
     }
 
-    return []byte(strings.Join(w.entities, " "))
+    return []byte(strings.Join(w.entities, "\x1f"))
 }
 
 
@@ -71,7 +71,7 @@ func (z *Soundscape) Bytes() []byte {
         z.soundqueue = append([]string{"a"}, z.soundqueue...)
     }
 
-    return []byte(strings.Join(z.soundqueue, " "))
+    return []byte(strings.Join(z.soundqueue, "\x1f"))
 }
 
 
@@ -92,6 +92,13 @@ func (w *Canvas) AddLine(colour string, x1, y1, x2, y2, speedx, speedy float64) 
     w.mutex.Lock()
     defer w.mutex.Unlock()
     w.entities = append(w.entities, fmt.Sprintf("l:%s:%.1f:%.1f:%.1f:%.1f:%.1f:%.1f", colour, x1, y1, x2, y2, speedx * eng.fps, speedy * eng.fps))
+}
+
+func (w *Canvas) AddText(text, colour string, size int, font string, x, y, speedx, speedy float64) {
+    w.mutex.Lock()
+    defer w.mutex.Unlock()
+    text = strings.Replace(text, "\x1f", " ", -1)        // Because ASCII 0x1F (31, unit sep) is meaningful in our comms protocol.
+    w.entities = append(w.entities, fmt.Sprintf("t:%s:%d:%s:%.1f:%.1f:%.1f:%.1f:%s", colour, size, font, x, y, speedx, speedy, text))
 }
 
 func (z *Soundscape) PlaySound(filename string) {

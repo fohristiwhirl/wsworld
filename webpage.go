@@ -100,7 +100,7 @@ function start_wsworld_client() {
 
     that.ws.onmessage = function (evt) {
 
-        var stuff = evt.data.split(" ");
+        var stuff = evt.data.split(String.fromCharCode(31));    // Our fields are split by ASCII 31 (unit sep)
         var frame_type = stuff[0];
 
         var n;
@@ -120,17 +120,21 @@ function start_wsworld_client() {
 
             var parse_point_or_sprite = that.parse_point_or_sprite;
             var parse_line = that.parse_line;
+            var parse_text = that.parse_text;
 
             for (n = 1; n < len; n += 1) {
 
                 switch (stuff[n].charAt(0)) {
 
+                case "l":
+                    parse_line(stuff[n]);
+                    break;
                 case "p":
                 case "s":
                     parse_point_or_sprite(stuff[n]);
                     break;
-                case "l":
-                    parse_line(stuff[n]);
+                case "t":
+                    parse_text(stuff[n]);
                     break;
                 }
             }
@@ -147,8 +151,8 @@ function start_wsworld_client() {
 
             // Debug messages..........................................................................
 
-            if (evt.data.length > 2) {
-                that.display_debug_message(evt.data.slice(2));
+            if (len > 0) {
+                that.display_debug_message(stuff[1]);
             }
         }
     };
@@ -223,6 +227,39 @@ function start_wsworld_client() {
         that.all_things.push(thing);
     };
 
+    that.parse_text = function (blob) {
+
+        var elements = blob.split(":");
+
+        if (elements.length < 9) {
+            return;
+        }
+
+        var thing = {};
+
+        thing.type = elements[0];
+        thing.colour = elements[1];
+        thing.size =  parseFloat(elements[2]);
+        thing.font = elements[3];
+        thing.x = parseFloat(elements[4]);
+        thing.y = parseFloat(elements[5]);
+        thing.speedx = parseFloat(elements[6]);
+        thing.speedy = parseFloat(elements[7]);
+        thing.text = elements.slice(8).join(":");       // Colons are our blob separator so the text may have been split. Rejoin.
+
+        that.all_things.push(thing);
+    };
+
+    that.draw_text = function(t, time_offset) {
+        var x = Math.floor(t.x + t.speedx * time_offset / 1000);
+        var y = Math.floor(t.y + t.size / 2 + t.speedy * time_offset / 1000);
+
+        virtue.fillStyle = t.colour;
+        virtue.textAlign = "center";
+        virtue.font = t.size.toString() + "px " + t.font;
+        virtue.fillText(t.text, x, y);
+    };
+
     that.draw_point = function (p, time_offset) {
         var x = Math.floor(p.x + p.speedx * time_offset / 1000);
         var y = Math.floor(p.y + p.speedy * time_offset / 1000);
@@ -267,19 +304,23 @@ function start_wsworld_client() {
         var draw_point = that.draw_point;
         var draw_sprite = that.draw_sprite;
         var draw_line = that.draw_line;
+        var draw_text = that.draw_text;
 
         var n;
         for (n = 0; n < len; n += 1) {
 
             switch (all_things[n].type) {
+            case "l":
+                draw_line(all_things[n], time_offset);
+                break;
             case "p":
                 draw_point(all_things[n], time_offset);
                 break;
             case "s":
                 draw_sprite(all_things[n], time_offset);
                 break;
-            case "l":
-                draw_line(all_things[n], time_offset);
+            case "t":
+                draw_text(all_things[n], time_offset);
                 break;
             }
         }
