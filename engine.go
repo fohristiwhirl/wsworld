@@ -122,6 +122,9 @@ func KeyDown(pid int, key string) bool {
 
 func PollClicks(pid int) [][]int {
 
+    // Return a slice containing every click since the last time this function was called.
+    // Then clear the clicks from memory.
+
     eng.mutex.Lock()
     defer eng.mutex.Unlock()
 
@@ -136,7 +139,7 @@ func PollClicks(pid int) [][]int {
     }
 
     for n := 0 ; n < len(eng.players[pid].clicks) ; n++ {
-        p := []int{eng.players[pid].clicks[n][0], eng.players[pid].clicks[n][1]}
+        p := []int{eng.players[pid].clicks[n][0], eng.players[pid].clicks[n][1]}    // Each element is a length-2 slice of x,y.
         ret = append(ret, p)
     }
 
