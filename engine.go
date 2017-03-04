@@ -74,7 +74,7 @@ func RegisterSound(filename string) {
         panic("RegisterSound(): already started")
     }
 
-    eng.sounds[filename] = fmt.Sprintf("sound%d", len(eng.sprites))
+    eng.sounds[filename] = fmt.Sprintf("sound%d", len(eng.sounds))
 }
 
 func Start(title, server, normal_path, res_path_local string, width, height int, fps float64, multiplayer bool) {
