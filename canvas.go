@@ -41,7 +41,6 @@ func (w *Canvas) Bytes() []byte {
     return []byte(strings.Join(w.entities, "\x1e"))
 }
 
-
 type Soundscape struct {
     mutex           sync.Mutex
     soundqueue      []string

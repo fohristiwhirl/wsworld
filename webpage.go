@@ -197,11 +197,9 @@ function start_wsworld_client() {
     });
 
     canvas.addEventListener("mousedown", function (evt) {
-        var x;
-        var y;
-        x = evt.clientX - canvas.offsetLeft;
-        y = evt.clientY - canvas.offsetTop;
-        that.ws.send("click " + x.toString() + " " + y.toString());
+        var x = evt.clientX - canvas.offsetLeft;
+        var y = evt.clientY - canvas.offsetTop;
+        that.ws.send("click " + evt.button.toString() + " " + x.toString() + " " + y.toString());
     });
 
     that.parse_point_or_sprite = function (blob) {

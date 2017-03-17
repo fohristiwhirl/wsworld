@@ -46,10 +46,16 @@ type engine struct {
     latest_player   int
 }
 
+type click struct {
+    X               int
+    Y               int
+    Button          int
+}
+
 type player struct {
     pid             int
     keyboard        map[string]bool
-    clicks          [][]int
+    clicks          []click
     conn            *websocket.Conn
 }
 
@@ -133,7 +139,7 @@ func _keydown(pid int, key string, clear bool) bool {
     return ret
 }
 
-func PollClicks(pid int) [][]int {
+func PollClicks(pid int) []click {
 
     // Return a slice containing every click since the last time this function was called.
     // Then clear the clicks from memory.
@@ -145,15 +151,14 @@ func PollClicks(pid int) [][]int {
         pid = eng.latest_player
     }
 
-    var ret [][]int
+    var ret []click
 
     if eng.players[pid] == nil {
         return ret
     }
 
     for n := 0 ; n < len(eng.players[pid].clicks) ; n++ {
-        p := []int{eng.players[pid].clicks[n][0], eng.players[pid].clicks[n][1]}    // Each element is a length-2 slice of x,y.
-        ret = append(ret, p)
+        ret = append(ret, eng.players[pid].clicks[n])
     }
 
     eng.players[pid].clicks = nil

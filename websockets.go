@@ -99,12 +99,13 @@ func ws_handler(writer http.ResponseWriter, request * http.Request) {
 
             if len(fields) > 2 {
 
-                x, _ := strconv.Atoi(fields[1])
-                y, _ := strconv.Atoi(fields[2])
+                button, _ := strconv.Atoi(fields[1])
+                x, _ := strconv.Atoi(fields[2])
+                y, _ := strconv.Atoi(fields[3])
 
                 eng.mutex.Lock()
                 if eng.players[pid] != nil {
-                    eng.players[pid].clicks = append(eng.players[pid].clicks, []int{x, y})
+                    eng.players[pid].clicks = append(eng.players[pid].clicks, click{Button: button, X: x, Y: y})
                 }
                 eng.mutex.Unlock()
             }
