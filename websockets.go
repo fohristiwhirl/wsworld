@@ -97,7 +97,7 @@ func ws_handler(writer http.ResponseWriter, request * http.Request) {
 
         case "click":
 
-            if len(fields) > 2 {
+            if len(fields) > 3 {
 
                 button, _ := strconv.Atoi(fields[1])
                 x, _ := strconv.Atoi(fields[2])
